@@ -148,6 +148,7 @@ fun InGameBoosterPanel(
     onOpenYouTube: (String) -> Unit,
     onOpenSpotify: (String) -> Unit,
     onTextInputFocusChanged: (Boolean) -> Unit,
+    onPlayLocalUri: (android.net.Uri, String?) -> Unit = { _, _ -> },
     screenshotFeedback: ScreenshotFeedback?,
     onCaptureScreenshot: () -> Unit,
     onMinimizeToHandle: () -> Unit,
@@ -360,7 +361,7 @@ fun InGameBoosterPanel(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f, fill = false)
+                        .weight(1f, fill = true)
                         .verticalScroll(rememberScrollState())
                 ) {
                     when (selectedTab) {
@@ -427,7 +428,8 @@ fun InGameBoosterPanel(
                             onPlayHistoryItem = onPlayHistoryItem,
                             onOpenYouTube = onOpenYouTube,
                             onOpenSpotify = onOpenSpotify,
-                            onTextInputFocusChanged = onTextInputFocusChanged
+                            onTextInputFocusChanged = onTextInputFocusChanged,
+                            onPlayLocalUri = onPlayLocalUri
                         )
                         OverlayToolTab.SCREENSHOT -> OverlayScreenshotTool(
                             feedback = screenshotFeedback,
