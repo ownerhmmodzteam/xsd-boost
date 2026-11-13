@@ -33,6 +33,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -59,6 +61,7 @@ fun FloatingMusicDynamicIsland(
     onPrevious: () -> Unit,
     onToggleRepeat: () -> Unit,
     onHideIsland: () -> Unit,
+    onDragIsland: (Float, Float) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val pillShape = RoundedCornerShape(if (isExpanded) 20.dp else 28.dp)
@@ -79,6 +82,19 @@ fun FloatingMusicDynamicIsland(
             .padding(horizontal = 12.dp, vertical = 7.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(width = 34.dp, height = 5.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.42f))
+                    .pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            onDragIsland(dragAmount.x, dragAmount.y)
+                        }
+                    }
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
