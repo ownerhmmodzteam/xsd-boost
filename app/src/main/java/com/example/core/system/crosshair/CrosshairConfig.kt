@@ -26,5 +26,8 @@ data class CrosshairConfig(
     val gapDp: Float = 6f,
     val hasOutline: Boolean = true,
     val outlineColorArgb: Long = 0xFF000000,
-    val rotationDegrees: Float = 0f
+    val rotationDegrees: Float = 0f,
+    /** Normalized screen position: 0 = left/top, 1 = right/bottom. */
+    val positionX: Float = 0.5f,
+    val positionY: Float = 0.5f
 )
