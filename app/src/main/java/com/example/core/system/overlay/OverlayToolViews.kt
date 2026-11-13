@@ -891,6 +891,9 @@ fun OverlayMusicPlayerTool(
     musicState: MusicPlayerState,
     savedUrl: String,
     dynamicIslandEnabled: Boolean,
+    islandPositionX: Int,
+    islandPositionY: Int,
+    onAdjustIslandPosition: (Int, Int) -> Unit,
     history: List<MusicHistoryEntity>,
     onLoadUrl: (String) -> Unit,
     onPlay: () -> Unit,
@@ -1285,6 +1288,29 @@ fun OverlayMusicPlayerTool(
                     uncheckedTrackColor = ElevatedSurface
                 )
             )
+        }
+
+        // Direction-pad controls for the floating Music Dynamic Island.
+        Column(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                .background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(10.dp)).padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text("POSISI DYNAMIC ISLAND", color = PrimaryWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("Geser dengan tombol arah • langkah 12 dp", color = MutedText, fontSize = 9.sp)
+            TextButton(onClick = { onAdjustIslandPosition(0, -12) }) { Text("↑", color = AccentGreen, fontSize = 22.sp) }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                TextButton(onClick = { onAdjustIslandPosition(-12, 0) }) { Text("←", color = AccentGreen, fontSize = 22.sp) }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("X", color = MutedText, fontSize = 8.sp)
+                    Text(islandPositionX.toString(), color = PrimaryWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Y", color = MutedText, fontSize = 8.sp)
+                    Text(islandPositionY.toString(), color = PrimaryWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+                TextButton(onClick = { onAdjustIslandPosition(12, 0) }) { Text("→", color = AccentGreen, fontSize = 22.sp) }
+            }
+            TextButton(onClick = { onAdjustIslandPosition(0, 12) }) { Text("↓", color = AccentGreen, fontSize = 22.sp) }
         }
 
         if (showHistory || history.isNotEmpty()) {
