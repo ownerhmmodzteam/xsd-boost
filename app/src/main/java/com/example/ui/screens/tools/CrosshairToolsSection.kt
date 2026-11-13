@@ -237,6 +237,32 @@ fun LazyListScope.crosshairStudioSection(
 
                 Column {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Horizontal Position", color = MutedText, fontSize = 12.sp)
+                        Text("${(config.positionX * 100).toInt()}%", color = PrimaryWhite, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+                    }
+                    Slider(
+                        value = config.positionX,
+                        onValueChange = { onUpdateConfig(config.copy(positionX = it)) },
+                        valueRange = 0f..1f,
+                        colors = SliderDefaults.colors(thumbColor = PrimaryWhite, activeTrackColor = PrimaryWhite)
+                    )
+                }
+
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Vertical Position", color = MutedText, fontSize = 12.sp)
+                        Text("${(config.positionY * 100).toInt()}%", color = PrimaryWhite, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
+                    }
+                    Slider(
+                        value = config.positionY,
+                        onValueChange = { onUpdateConfig(config.copy(positionY = it)) },
+                        valueRange = 0f..1f,
+                        colors = SliderDefaults.colors(thumbColor = PrimaryWhite, activeTrackColor = PrimaryWhite)
+                    )
+                }
+
+                Column {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Rotation", color = MutedText, fontSize = 12.sp)
                         Text("${config.rotationDegrees.toInt()}°", color = PrimaryWhite, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
                     }
