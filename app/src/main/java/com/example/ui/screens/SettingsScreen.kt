@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,6 +41,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -90,20 +93,12 @@ fun SettingsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(46.dp)
-                                .clip(CircleShape)
-                                .background(PrimaryWhite),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Developer",
-                                tint = BgPrimary,
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
+                        Image(
+                            painter = painterResource(id = com.example.R.drawable.xsd_developer_avatar),
+                            contentDescription = "XSD BOOST anime mascot",
+                            modifier = Modifier.size(54.dp).clip(CircleShape).border(1.5.dp, AccentGreen, CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
                         Column {
                             Text(
                                 text = "DEVELOPER PROFILE",
@@ -216,21 +211,20 @@ fun DeveloperProfileScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(PrimaryWhite),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "MRM",
-                            color = BgPrimary,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
+                    Image(
+                        painter = painterResource(id = com.example.R.drawable.xsd_developer_avatar),
+                        contentDescription = "XSD BOOST developer mascot",
+                        modifier = Modifier.size(112.dp).clip(CircleShape).border(2.dp, AccentGreen, CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                    Text(
+                        text = "XSD BOOST • DEVELOPER",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AccentGreen,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = 1.5.sp
+                    )
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
