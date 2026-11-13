@@ -684,6 +684,7 @@ class FloatingOverlayService : Service() {
                             )
                         }
                     },
+                    onPlayLocalUri = { uri, title -> musicPlayer.playLocalUri(uri, title) },
                     onMusicPlay = { musicPlayer.play() },
                     onMusicPause = { musicPlayer.pause() },
                     onMusicStop = { musicPlayer.stopPlayback() },
