@@ -212,7 +212,7 @@ fun MonitorScreen(
             }
         }
 
-        // Overlay Position Settings (Left Edge & Right Edge + Visual Preview + Handle Parameters)
+        // Overlay appearance: only size and transparency are user-customizable.
         item {
             Box(
                 modifier = Modifier
@@ -224,55 +224,26 @@ fun MonitorScreen(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "OVERLAY POSITION",
+                        text = "OVERLAY APPEARANCE",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = PrimaryWhite,
                         fontFamily = FontFamily.Monospace
                     )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        EdgeSide.entries.forEach { side ->
-                            val selected = defaultOverlaySide == side
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (selected) PrimaryWhite else ElevatedSurface)
-                                    .border(
-                                        1.dp,
-                                        if (selected) PrimaryWhite else BorderColor,
-                                        RoundedCornerShape(12.dp)
-                                    )
-                                    .clickable { onUpdateDefaultOverlaySide(side) }
-                                    .testTag("overlay_side_${side.name.lowercase()}"),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = side.label,
-                                    color = if (selected) BgPrimary else SecondaryWhite,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-
-                    // Live Visual Preview of Left / Right Floating Handle
+                    Text(
+                        text = "Overlay menggunakan handle bawaan XSD BOOST. Kamu hanya dapat mengatur ukuran dan transparansinya.",
+                        color = MutedText,
+                        fontSize = 11.sp
+                    )
                     OverlayPositionPreview(
-                        side = defaultOverlaySide,
+                        side = EdgeSide.RIGHT,
                         handleSizeDp = defaultHandleSizeDp,
                         handleOpacity = defaultHandleOpacity,
-                        isHidden = isDefaultHandleHidden
+                        isHidden = false
                     )
-
                     Column {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Handle Size", color = MutedText, fontSize = 11.sp)
+                            Text("Ukuran Overlay", color = MutedText, fontSize = 11.sp)
                             Text("${defaultHandleSizeDp.toInt()} dp", color = PrimaryWhite, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
                         }
                         Slider(
@@ -281,9 +252,8 @@ fun MonitorScreen(
                             valueRange = 56f..120f,
                             colors = SliderDefaults.colors(thumbColor = PrimaryWhite, activeTrackColor = PrimaryWhite)
                         )
-
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Handle Opacity", color = MutedText, fontSize = 11.sp)
+                            Text("Transparansi Overlay", color = MutedText, fontSize = 11.sp)
                             Text("${(defaultHandleOpacity * 100).toInt()}%", color = PrimaryWhite, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
                         }
                         Slider(
@@ -292,72 +262,6 @@ fun MonitorScreen(
                             valueRange = 0.25f..1.0f,
                             colors = SliderDefaults.colors(thumbColor = PrimaryWhite, activeTrackColor = PrimaryWhite)
                         )
-
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Long Press Duration", color = MutedText, fontSize = 11.sp)
-                            Text("${defaultLongPressMs} ms", color = PrimaryWhite, fontSize = 11.sp, fontFamily = FontFamily.Monospace)
-                        }
-                        Slider(
-                            value = defaultLongPressMs.toFloat(),
-                            onValueChange = { onUpdateDefaultLongPressMs(it.toLong()) },
-                            valueRange = 250f..800f,
-                            colors = SliderDefaults.colors(thumbColor = PrimaryWhite, activeTrackColor = PrimaryWhite)
-                        )
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(ElevatedSurface)
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text("• Tekan & Tahan (~${defaultLongPressMs}ms): Buka Game Booster Panel", color = PrimaryWhite, fontSize = 11.sp)
-                        Text("• Geser Vertikal (Drag): Pindah posisi handle di tepi ${if (defaultOverlaySide == EdgeSide.LEFT) "kiri" else "kanan"}", color = SecondaryWhite, fontSize = 11.sp)
-                        Text("• Single / Double Tap: Abai (Aman dari sentuhan tak sengaja)", color = MutedText, fontSize = 11.sp)
-                        Text(
-                            text = if (defaultOverlaySide == EdgeSide.LEFT) {
-                                "• Geser Panel ke Kiri: Minimize ke handle kiri"
-                            } else {
-                                "• Geser Panel ke Kanan: Minimize ke handle kanan"
-                            },
-                            color = MutedText,
-                            fontSize = 11.sp
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Default Hidden Handle Mode", color = PrimaryWhite, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                            Text("Handle menyisakan garis tipis di tepi layar untuk game baru", color = MutedText, fontSize = 10.sp)
-                        }
-                        Switch(
-                            checked = isDefaultHandleHidden,
-                            onCheckedChange = onToggleDefaultHandleHidden,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = PrimaryWhite,
-                                checkedTrackColor = ElevatedSurface,
-                                uncheckedThumbColor = MutedText,
-                                uncheckedTrackColor = ElevatedSurface
-                            ),
-                            modifier = Modifier.testTag("hidden_handle_default_toggle")
-                        )
-                    }
-
-                    Button(
-                        onClick = onRestoreAllHiddenHandles,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = ElevatedSurface, contentColor = PrimaryWhite),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("PULIHKAN SEMUA HANDLE TERSEMBUNYI", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
