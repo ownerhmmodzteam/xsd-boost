@@ -26,3 +26,7 @@ Project ini sudah menyertakan workflow GitHub Actions di `.github/workflows/andr
 Upload source ke repository GitHub, buka tab **Actions**, pilih **XSD BOOST Android Build**, lalu jalankan workflow. Pilih `debug` untuk APK testing atau `release` untuk build release. APK yang berhasil dibuat dapat diunduh dari bagian **Artifacts** pada halaman hasil workflow. Push ke branch `main` otomatis menjalankan build Debug.
 
 Panduan lengkap dan pengaturan signing ada di `.github/README.md`.
+
+## Local Music Library
+
+The Music Player overlay includes a SAF-based local folder library. Tap **Pilih Folder** and navigate to a folder such as `Internal storage/music_hmmodz`. Android grants access only to the selected folder; XSD BOOST stores that grant and can scan it again after restart. Use **Scan Ulang** after adding files. Supported common audio extensions include MP3, M4A, AAC, FLAC, OGG/OPUS, WAV, 3GP, AMR, and MKA. The library is read-only and does not modify user files.
