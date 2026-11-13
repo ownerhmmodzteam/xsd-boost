@@ -98,6 +98,8 @@ class FloatingOverlayService : Service() {
     private var panelVisibleState by mutableStateOf(false)
     private var selectedTabState by mutableStateOf(OverlayToolTab.PERFORMANCE)
     private var isIslandExpandedState by mutableStateOf(false)
+    private var islandPositionXState by mutableStateOf(0)
+    private var islandPositionYState by mutableStateOf(0)
     private var isClosedForSession = false
     private var isIslandHiddenForSession = false
     private var isPreviewSession = false
@@ -673,6 +675,28 @@ class FloatingOverlayService : Service() {
                     musicState = musicState,
                     savedMusicUrl = resolvedProfile.musicUrl,
                     dynamicIslandEnabled = resolvedProfile.dynamicIslandEnabled,
+                    islandPositionX = islandPositionXState,
+                    islandPositionY = islandPositionYState,
+                    onAdjustIslandPosition = { dxDp, dyDp ->
+                        val density = resources.displayMetrics.density
+                        val view = islandView
+                        val layout = islandParams
+                        val prefs = getSharedPreferences("xsd_island_position", Context.MODE_PRIVATE)
+                        val currentX = if (layout != null) layout.x else prefs.getInt("x", (resources.displayMetrics.widthPixels / 2) - (120 * density).toInt())
+                        val currentY = if (layout != null) layout.y else prefs.getInt("y", getStatusBarHeightPx() + (8 * density).toInt())
+                        val maxX = (resources.displayMetrics.widthPixels - (view?.width ?: (240 * density).toInt())).coerceAtLeast(0)
+                        val maxY = (resources.displayMetrics.heightPixels - (view?.height ?: (56 * density).toInt())).coerceAtLeast(0)
+                        val newX = (currentX + (dxDp * density).toInt()).coerceIn(0, maxX)
+                        val newY = (currentY + (dyDp * density).toInt()).coerceIn(0, maxY)
+                        prefs.edit().putInt("x", newX).putInt("y", newY).apply()
+                        islandPositionXState = (newX / density).toInt()
+                        islandPositionYState = (newY / density).toInt()
+                        if (view != null && layout != null) {
+                            layout.x = newX
+                            layout.y = newY
+                            try { windowManager?.updateViewLayout(view, layout) } catch (_: Exception) { }
+                        }
+                    },
                     musicHistory = gameFilteredHistory,
                     onLoadMusicUrl = { url ->
                         val pkg = resolvedProfile.packageName
@@ -815,6 +839,8 @@ class FloatingOverlayService : Service() {
             }
         }
 
+        islandPositionXState = (params.x / density).toInt()
+        islandPositionYState = (params.y / density).toInt()
         islandParams = params
         islandView = composeView
         try {
