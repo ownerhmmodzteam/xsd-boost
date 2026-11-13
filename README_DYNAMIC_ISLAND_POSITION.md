@@ -10,3 +10,7 @@
 - Android overlay permission must be granted for the floating island to appear.
 - Position is stored per app installation on the current device.
 - Build verification must be run in GitHub Actions; no APK build is claimed by this source package.
+
+
+### Directional position controller (latest update)
+Open Game Booster > Music > POSISI DYNAMIC ISLAND. Use the arrow buttons to move the island by 12 dp per tap. The center readout shows the current X and Y coordinates in dp. The selected position is saved automatically and constrained to the visible screen area.
