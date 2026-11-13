@@ -63,6 +63,8 @@ class UserPreferencesRepository(private val context: Context) {
         val CROSSHAIR_GAP = floatPreferencesKey("crosshair_gap")
         val CROSSHAIR_OUTLINE = booleanPreferencesKey("crosshair_outline")
         val CROSSHAIR_ROTATION = floatPreferencesKey("crosshair_rotation")
+        val CROSSHAIR_POSITION_X = floatPreferencesKey("crosshair_position_x")
+        val CROSSHAIR_POSITION_Y = floatPreferencesKey("crosshair_position_y")
 
         // Smart Game Detection & Flexible Edge Handle preferences
         val SMART_BOOSTER_WATCHER_ENABLED = booleanPreferencesKey("smart_booster_watcher_enabled")
@@ -129,7 +131,9 @@ class UserPreferencesRepository(private val context: Context) {
             hasCenterDot = prefs[CROSSHAIR_CENTER_DOT] ?: true,
             gapDp = prefs[CROSSHAIR_GAP] ?: 6f,
             hasOutline = prefs[CROSSHAIR_OUTLINE] ?: true,
-            rotationDegrees = prefs[CROSSHAIR_ROTATION] ?: 0f
+            rotationDegrees = prefs[CROSSHAIR_ROTATION] ?: 0f,
+            positionX = prefs[CROSSHAIR_POSITION_X] ?: 0.5f,
+            positionY = prefs[CROSSHAIR_POSITION_Y] ?: 0.5f
         )
     }
 
@@ -220,6 +224,8 @@ class UserPreferencesRepository(private val context: Context) {
             it[CROSSHAIR_GAP] = config.gapDp
             it[CROSSHAIR_OUTLINE] = config.hasOutline
             it[CROSSHAIR_ROTATION] = config.rotationDegrees
+            it[CROSSHAIR_POSITION_X] = config.positionX.coerceIn(0f, 1f)
+            it[CROSSHAIR_POSITION_Y] = config.positionY.coerceIn(0f, 1f)
         }
     }
 
