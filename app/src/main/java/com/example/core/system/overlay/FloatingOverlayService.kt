@@ -401,7 +401,7 @@ class FloatingOverlayService : Service() {
         val dm = resources.displayMetrics
         val density = dm.density
         val side = EdgeSide.fromString(profile.overlaySide)
-        val widthPx = ((if (profile.isHandleHidden) 14f else 22f) * density).toInt().coerceAtLeast(12)
+        val widthPx = ((if (profile.isHandleHidden) 48f else 74f) * density).toInt().coerceAtLeast(40)
         val heightDp = (profile.handleSizeDp + 16f).coerceIn(72f, 136f)
         val heightPx = (heightDp * density).toInt().coerceAtLeast(64)
         val maxY = (dm.heightPixels - heightPx).coerceAtLeast(0)
@@ -484,7 +484,7 @@ class FloatingOverlayService : Service() {
         val dm = resources.displayMetrics
         val density = dm.density
         val side = EdgeSide.fromString(profile.overlaySide)
-        val widthPx = ((if (profile.isHandleHidden) 14f else 22f) * density).toInt().coerceAtLeast(12)
+        val widthPx = ((if (profile.isHandleHidden) 48f else 74f) * density).toInt().coerceAtLeast(40)
         val heightDp = (profile.handleSizeDp + 16f).coerceIn(72f, 136f)
         val heightPx = (heightDp * density).toInt().coerceAtLeast(64)
         val maxY = (dm.heightPixels - heightPx).coerceAtLeast(0)
@@ -771,9 +771,10 @@ class FloatingOverlayService : Service() {
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            x = 0
-            y = statusBarPx + (8 * density).toInt()
+            gravity = Gravity.TOP or Gravity.START
+            val positionPrefs = getSharedPreferences("xsd_island_position", Context.MODE_PRIVATE)
+            x = positionPrefs.getInt("x", -1).let { if (it < 0) (resources.displayMetrics.widthPixels / 2) - (120 * density).toInt() else it }
+            y = positionPrefs.getInt("y", statusBarPx + (8 * density).toInt())
         }
 
         val composeView = ComposeView(this).apply {
@@ -789,6 +790,21 @@ class FloatingOverlayService : Service() {
                     onNext = { musicPlayer.skipToNext() },
                     onPrevious = { musicPlayer.skipToPrevious() },
                     onToggleRepeat = { musicPlayer.toggleRepeat() },
+                    onDragIsland = { dx, dy ->
+                        val view = islandView
+                        val layout = islandParams
+                        if (view != null && layout != null) {
+                            val maxX = (resources.displayMetrics.widthPixels - view.width).coerceAtLeast(0)
+                            val maxY = (resources.displayMetrics.heightPixels - view.height).coerceAtLeast(0)
+                            layout.x = (layout.x + dx.toInt()).coerceIn(0, maxX)
+                            layout.y = (layout.y + dy.toInt()).coerceIn(0, maxY)
+                            try {
+                                windowManager?.updateViewLayout(view, layout)
+                                getSharedPreferences("xsd_island_position", Context.MODE_PRIVATE).edit()
+                                    .putInt("x", layout.x).putInt("y", layout.y).apply()
+                            } catch (_: Exception) { }
+                        }
+                    },
                     onHideIsland = {
                         isIslandHiddenForSession = true
                         isIslandExpandedState = false
