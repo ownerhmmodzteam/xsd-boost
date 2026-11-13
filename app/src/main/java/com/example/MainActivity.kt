@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -32,6 +33,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Text
@@ -78,42 +89,107 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+@Composable
+private fun XsdAnimatedSplash() {
+    val transition = rememberInfiniteTransition(label = "xsd_splash")
+    val pulse by transition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.045f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1050, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ), label = "logo_pulse"
+    )
+    val glowAlpha by transition.animateFloat(
+        initialValue = 0.22f,
+        targetValue = 0.72f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ), label = "logo_glow"
+    )
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
+    val entrance by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (entered) 1f else 0.15f,
+        animationSpec = tween(700, easing = FastOutSlowInEasing),
+        label = "splash_entrance"
+    )
+
+    Box(
+        modifier = Modifier.fillMaxSize().background(BgPrimary),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize(0.72f)
+                .scale(pulse)
+                .alpha(glowAlpha)
+                .background(
+                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(
+                            androidx.compose.ui.graphics.Color(0x6638FF9A),
+                            androidx.compose.ui.graphics.Color(0x2238FF9A),
+                            androidx.compose.ui.graphics.Color.Transparent
+                        )
+                    ),
+                    shape = androidx.compose.foundation.shape.CircleShape
+                )
+        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.alpha(entrance)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.xsd_brand_anime),
+                contentDescription = "XSD BOOST anime mascot logo",
+                modifier = Modifier
+                    .fillMaxWidth(0.82f)
+                    .scale(pulse),
+                contentScale = ContentScale.Fit
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = "INITIALIZING BOOST SYSTEM",
+                color = androidx.compose.ui.graphics.Color(0xFF9BFFBD),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.4.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.42f)
+                    .height(3.dp)
+                    .background(
+                        androidx.compose.ui.graphics.Color(0xFF26352D),
+                        androidx.compose.foundation.shape.RoundedCornerShape(50)
+                    )
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(entrance.coerceIn(0.08f, 1f))
+                        .height(3.dp)
+                        .background(
+                            androidx.compose.ui.graphics.Color(0xFF39F58A),
+                            androidx.compose.foundation.shape.RoundedCornerShape(50)
+                        )
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun MainAppContainer(viewModel: MainViewModel) {
     var showSplash by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        delay(1250)
+        delay(2800)
         showSplash = false
     }
     if (showSplash) {
-        Box(
-            modifier = Modifier.fillMaxSize().background(BgPrimary),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "XSD",
-                    color = androidx.compose.ui.graphics.Color.White,
-                    fontSize = 42.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 5.sp
-                )
-                Text(
-                    text = "BOOST",
-                    color = androidx.compose.ui.graphics.Color(0xFF35D6B0),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 7.sp
-                )
-                Spacer(modifier = Modifier.height(18.dp))
-                Text(
-                    text = "GAME BOOSTER",
-                    color = androidx.compose.ui.graphics.Color.LightGray,
-                    fontSize = 10.sp,
-                    letterSpacing = 2.sp
-                )
-            }
-        }
+        XsdAnimatedSplash()
         return
     }
     var selectedTab by remember { mutableStateOf(BottomNavTab.HOME) }
