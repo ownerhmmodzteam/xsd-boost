@@ -24,8 +24,8 @@ jobs:
     name: Build ${{ github.event.inputs.build_type || 'debug' }} APK
     runs-on: ubuntu-latest
     env:
-      ANDROID_HOME: ${{ runner.temp }}/android-sdk
-      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
