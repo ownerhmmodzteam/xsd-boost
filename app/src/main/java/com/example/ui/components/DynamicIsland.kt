@@ -323,6 +323,8 @@ fun DynamicIsland(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(max = 560.dp)
+                            .verticalScroll(rememberScrollState())
                             .padding(top = 14.dp)
                     ) {
                         Row(
