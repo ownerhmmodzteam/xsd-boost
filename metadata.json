@@ -1,0 +1,6 @@
+{
+  "name": "XSD BOOST",
+  "description": "Advanced Android Gaming Performance & System Utility Application by HM MODZ TEAM",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
