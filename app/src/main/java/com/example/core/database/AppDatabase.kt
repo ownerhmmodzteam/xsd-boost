@@ -46,7 +46,7 @@ data class GameProfileEntity(
     val crosshairSizeDp: Float = 28f,
     val crosshairOpacity: Float = 0.95f,
     val overlayEnabled: Boolean = true,
-    val overlaySide: String = "RIGHT",
+    val overlaySide: String = "LEFT",
     val isHandleHidden: Boolean = false,
     val handleYFraction: Float = 0.42f,
     val handleSizeDp: Float = 76f,
