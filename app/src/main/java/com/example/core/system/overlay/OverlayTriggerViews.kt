@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -44,6 +47,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.BorderActive
 import com.example.ui.theme.PrimaryWhite
@@ -201,60 +205,15 @@ fun FloatingEdgeHandle(
             },
         contentAlignment = if (isLeft) Alignment.CenterStart else Alignment.CenterEnd
     ) {
-        if (isHiddenMode) {
-            val hiddenShape = if (isLeft) {
-                RoundedCornerShape(topEnd = 6.dp, bottomEnd = 6.dp)
-            } else {
-                RoundedCornerShape(topStart = 6.dp, bottomStart = 6.dp)
-            }
-            Box(
-                modifier = Modifier
-                    .alpha(clampedOpacity)
-                    .width(hiddenPillWidth)
-                    .height((clampedHeight * 0.72f).coerceAtLeast(42f).dp)
-                    .clip(hiddenShape)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.White.copy(alpha = 0.14f),
-                                Color.White.copy(alpha = if (isInteracting) 0.78f else 0.44f),
-                                Color.White.copy(alpha = 0.14f)
-                            )
-                        )
-                    )
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .alpha(clampedOpacity)
-                    .padding(
-                        start = if (isLeft) 3.dp else 0.dp,
-                        end = if (isLeft) 0.dp else 3.dp
-                    )
-                    .width(normalPillWidth)
-                    .height(clampedHeight.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color(0xFF404040).copy(alpha = 0.88f),
-                                Color(0xFFFFFFFF).copy(alpha = 0.92f),
-                                Color(0xFF262626).copy(alpha = 0.92f)
-                            )
-                        )
-                    )
-                    .border(0.75.dp, activeBorderColor, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(2.dp)
-                        .height((clampedHeight * 0.36f).coerceIn(18f, 44f).dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF050505).copy(alpha = 0.82f))
-                )
-            }
-        }
+        Image(
+            painter = painterResource(id = R.drawable.xsd_boost_overlay),
+            contentDescription = "XSD BOOST overlay icon",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .padding(horizontal = if (isLeft) 2.dp else 0.dp)
+                .size(if (isHiddenMode) 42.dp else 68.dp)
+                .alpha((clampedOpacity * if (isHiddenMode) 0.58f else 1f).coerceIn(0.15f, 1f))
+        )
     }
 }
 
