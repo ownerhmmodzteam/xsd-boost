@@ -1,6 +1,11 @@
 package com.example
 
 import android.os.Bundle
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -53,6 +58,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val audioPermission = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
+        if (ContextCompat.checkSelfPermission(this, audioPermission) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(audioPermission), 4207)
+        }
         setContent {
             MyApplicationTheme {
                 MainAppContainer(viewModel = viewModel)
