@@ -12,6 +12,8 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -92,7 +94,10 @@ class FloatingCrosshairService : Service() {
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.CENTER
+            gravity = Gravity.TOP or Gravity.START
+            // Initial center; updated from persisted normalized coordinates below.
+            x = 0
+            y = 0
         }
 
         val composeView = ComposeView(this).apply {
@@ -101,7 +106,24 @@ class FloatingCrosshairService : Service() {
             setContent {
                 val globalConfig by prefsRepo.crosshairConfig.collectAsState(initial = CrosshairConfig())
                 val activeGameConfig by container.activeGameCrosshairConfig.collectAsState()
-                CrosshairRenderer(config = activeGameConfig ?: globalConfig)
+                val config = activeGameConfig ?: globalConfig
+                val density = resources.displayMetrics.density
+                val screenWidth = resources.displayMetrics.widthPixels
+                val screenHeight = resources.displayMetrics.heightPixels
+                val viewSizePx = (config.sizeDp * density).toInt().coerceAtLeast(1)
+                val targetX = ((screenWidth - viewSizePx).coerceAtLeast(0) * config.positionX.coerceIn(0f, 1f)).toInt()
+                val targetY = ((screenHeight - viewSizePx).coerceAtLeast(0) * config.positionY.coerceIn(0f, 1f)).toInt()
+                androidx.compose.runtime.SideEffect {
+                    val view = crosshairView
+                    val wm = windowManager
+                    val lp = view?.layoutParams as? WindowManager.LayoutParams
+                    if (view != null && wm != null && lp != null && (lp.x != targetX || lp.y != targetY)) {
+                        lp.x = targetX
+                        lp.y = targetY
+                        try { wm.updateViewLayout(view, lp) } catch (_: Exception) {}
+                    }
+                }
+                CrosshairRenderer(config = config)
             }
         }
 
