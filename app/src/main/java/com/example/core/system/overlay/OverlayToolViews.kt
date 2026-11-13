@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,6 +31,8 @@ import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -50,6 +54,11 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import android.content.ContentUris
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,6 +66,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,6 +99,9 @@ import com.example.core.system.graphics.GraphicsHardwareInfo
 import com.example.core.system.graphics.GraphicsPresetProfile
 import com.example.core.system.hardware.SystemStats
 import com.example.core.system.media.MusicPlayerState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 import com.example.core.system.sensitivity.InputCompatibilityLayer
 import com.example.core.system.sensitivity.InputCompatibilityReport
 import com.example.ui.theme.AccentAmber
@@ -892,11 +905,64 @@ fun OverlayMusicPlayerTool(
     onPlayHistoryItem: (MusicHistoryEntity) -> Unit,
     onOpenYouTube: (String) -> Unit,
     onOpenSpotify: (String) -> Unit,
-    onTextInputFocusChanged: (Boolean) -> Unit
+    onTextInputFocusChanged: (Boolean) -> Unit,
+    onPlayLocalUri: (Uri, String?) -> Unit = { _, _ -> }
 ) {
     val clipboard = LocalClipboardManager.current
     var urlInput by remember(savedUrl) { mutableStateOf(savedUrl.ifBlank { musicState.currentUrl }) }
     var showHistory by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val musicScope = rememberCoroutineScope()
+    var localMusic by remember { mutableStateOf<List<Pair<Uri, String>>>(emptyList()) }
+    var localMusicStatus by remember { mutableStateOf("Folder /storage/emulated/0/music_hmmodz belum dipindai.") }
+    var localMusicQuery by remember { mutableStateOf("") }
+    var scanningLocalMusic by remember { mutableStateOf(false) }
+
+    suspend fun scanDefaultMusicFolder() {
+        scanningLocalMusic = true
+        localMusicStatus = "Memindai folder musik..."
+        val result = withContext(Dispatchers.IO) {
+            val rows = mutableListOf<Pair<Uri, String>>()
+            val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+            val projection = arrayOf(
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.DISPLAY_NAME,
+                MediaStore.Audio.Media.DATA
+            )
+            val allowed = setOf("mp3", "m4a", "aac", "flac", "ogg", "opus", "wav", "3gp", "amr", "mka")
+            val base = "/storage/emulated/0/music_hmmodz/"
+            try {
+                context.contentResolver.query(collection, projection, null, null,
+                    "${MediaStore.Audio.Media.DISPLAY_NAME} COLLATE NOCASE ASC")?.use { cursor ->
+                    val idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+                    val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+                    val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                    while (cursor.moveToNext()) {
+                        val name = cursor.getString(nameCol) ?: continue
+                        val path = if (dataCol >= 0) cursor.getString(dataCol) else null
+                        val ext = name.substringAfterLast('.', "").lowercase()
+                        if (!path.isNullOrBlank() && path.startsWith(base, ignoreCase = true) && ext in allowed) {
+                            val id = cursor.getLong(idCol)
+                            rows.add(ContentUris.withAppendedId(collection, id) to name)
+                        }
+                    }
+                }
+            } catch (_: SecurityException) { }
+              catch (_: Exception) { }
+            rows
+        }
+        localMusic = result
+        localMusicStatus = when {
+            result.isNotEmpty() -> "${result.size} file audio ditemukan, termasuk subfolder."
+            android.os.Build.VERSION.SDK_INT >= 33 &&
+                androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_MEDIA_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED ->
+                "Izin musik belum diberikan. Buka Pengaturan aplikasi lalu izinkan Musik dan audio."
+            else -> "Tidak ada audio ditemukan di /storage/emulated/0/music_hmmodz. Periksa nama folder dan izin media."
+        }
+        scanningLocalMusic = false
+    }
+
+    LaunchedEffect(Unit) { scanDefaultMusicFolder() }
 
     LaunchedEffect(musicState.currentUrl) {
         if (musicState.currentUrl.isNotBlank() && urlInput.isBlank()) {
@@ -1150,6 +1216,45 @@ fun OverlayMusicPlayerTool(
                         Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Buka Link di Spotify Resmi", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        // Local audio library: reads the requested folder recursively through MediaStore.
+        Column(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                .background(ElevatedSurface).border(1.dp, BorderColor, RoundedCornerShape(12.dp)).padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("LOCAL MUSIC LIBRARY", color = PrimaryWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                Text("${localMusic.size} TRACKS", color = AccentCyan, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
+            }
+            Text("/storage/emulated/0/music_hmmodz", color = MutedText, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { musicScope.launch { scanDefaultMusicFolder() } }, enabled = !scanningLocalMusic) {
+                    Icon(Icons.Default.Refresh, contentDescription = null, tint = SecondaryWhite, modifier = Modifier.size(14.dp))
+                    Text(if (scanningLocalMusic) "Memindai..." else "Scan Ulang", color = SecondaryWhite, fontSize = 10.sp)
+                }
+            }
+            OutlinedTextField(
+                value = localMusicQuery, onValueChange = { localMusicQuery = it },
+                modifier = Modifier.fillMaxWidth().height(48.dp), singleLine = true,
+                placeholder = { Text("Cari judul lagu...", color = MutedText, fontSize = 10.sp) },
+                textStyle = TextStyle(fontSize = 11.sp, color = PrimaryWhite),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryWhite, unfocusedBorderColor = BorderColor, focusedTextColor = PrimaryWhite, unfocusedTextColor = SecondaryWhite)
+            )
+            Text(localMusicStatus, color = if (localMusic.isEmpty()) MutedText else AccentGreen, fontSize = 9.sp)
+            val filteredLocalMusic = localMusic.filter { it.second.contains(localMusicQuery, ignoreCase = true) }
+            if (filteredLocalMusic.isNotEmpty()) {
+                Column(modifier = Modifier.fillMaxWidth().heightIn(max = 190.dp).verticalScroll(rememberScrollState())) {
+                    filteredLocalMusic.forEach { (uri, title) ->
+                        Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { onPlayLocalUri(uri, title) }.padding(horizontal = 6.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.MusicNote, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(17.dp))
+                            Text(title, color = PrimaryWhite, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play $title", tint = SecondaryWhite, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }
