@@ -1,6 +1,20 @@
 package com.example.ui.components
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import android.content.Intent
+import android.net.Uri
+import android.provider.DocumentsContract
+import android.provider.OpenableColumns
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -22,10 +36,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -84,6 +100,48 @@ import com.example.ui.theme.MutedText
 import com.example.ui.theme.PrimaryWhite
 import com.example.ui.theme.SecondaryWhite
 
+private data class LocalMusicTrack(val uri: Uri, val name: String, val mimeType: String)
+
+private fun scanMusicTree(context: android.content.Context, treeUri: Uri): List<LocalMusicTrack> {
+    val resolver = context.contentResolver
+    val found = mutableListOf<LocalMusicTrack>()
+    val visited = hashSetOf<String>()
+    val queue = ArrayDeque<Uri>()
+    queue.add(treeUri)
+    while (queue.isNotEmpty() && found.size < 1000) {
+        val parent = queue.removeFirst()
+        val parentId = try { DocumentsContract.getTreeDocumentId(treeUri) } catch (_: Exception) { continue }
+        val documentId = try {
+            if (parent == treeUri) parentId else DocumentsContract.getDocumentId(parent)
+        } catch (_: Exception) { continue }
+        if (!visited.add(documentId)) continue
+        val childrenUri = try { DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, documentId) } catch (_: Exception) { continue }
+        try {
+            resolver.query(childrenUri, arrayOf(
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                DocumentsContract.Document.COLUMN_MIME_TYPE
+            ), null, null, null)?.use { cursor ->
+                val idCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                val nameCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                val mimeCol = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                while (cursor.moveToNext() && found.size < 1000) {
+                    val id = if (idCol >= 0) cursor.getString(idCol) else continue
+                    val name = if (nameCol >= 0) cursor.getString(nameCol).orEmpty() else "Audio"
+                    val mime = if (mimeCol >= 0) cursor.getString(mimeCol).orEmpty() else ""
+                    if (mime == DocumentsContract.Document.MIME_TYPE_DIR) {
+                        queue.add(DocumentsContract.buildDocumentUriUsingTree(treeUri, id))
+                    } else if (mime.startsWith("audio/") || name.substringAfterLast('.', "").lowercase() in setOf("mp3", "m4a", "aac", "flac", "ogg", "opus", "wav", "3gp", "amr", "mka")) {
+                        found.add(LocalMusicTrack(DocumentsContract.buildDocumentUriUsingTree(treeUri, id), name, mime))
+                    }
+                }
+            }
+        } catch (_: SecurityException) { /* Folder access was revoked. */ }
+          catch (_: Exception) { /* Ignore unreadable entries and continue scanning. */ }
+    }
+    return found.sortedBy { it.name.lowercase() }
+}
+
 enum class IslandMode {
     STATS,
     MUSIC,
@@ -117,6 +175,46 @@ fun DynamicIsland(
     var inputUrl by remember { mutableStateOf("") }
     var showHistory by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var musicFolderUri by remember { mutableStateOf<Uri?>(null) }
+    var localTracks by remember { mutableStateOf<List<LocalMusicTrack>>(emptyList()) }
+    var musicSearch by remember { mutableStateOf("") }
+    var folderStatus by remember { mutableStateOf("Pilih folder untuk memuat musik lokal.") }
+    var isScanning by remember { mutableStateOf(false) }
+    fun scanSelectedFolder(uri: Uri) {
+        scope.launch {
+            isScanning = true
+            folderStatus = "Memindai folder musik..."
+            val result = withContext(Dispatchers.IO) { scanMusicTree(context, uri) }
+            localTracks = result
+            folderStatus = if (result.isEmpty()) "Tidak ada file audio yang ditemukan." else "${result.size} file audio ditemukan."
+            isScanning = false
+        }
+    }
+    val folderPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (_: Exception) { }
+            musicFolderUri = uri
+            context.getSharedPreferences("xsd_music_library", android.content.Context.MODE_PRIVATE)
+                .edit().putString("folder_uri", uri.toString()).apply()
+            scanSelectedFolder(uri)
+        }
+    }
+    LaunchedEffect(Unit) {
+        val saved = context.getSharedPreferences("xsd_music_library", android.content.Context.MODE_PRIVATE)
+            .getString("folder_uri", null)
+        if (saved != null) {
+            val uri = runCatching { Uri.parse(saved) }.getOrNull()
+            if (uri != null) {
+                musicFolderUri = uri
+                scanSelectedFolder(uri)
+            }
+        }
+    }
     val localAudioPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -486,6 +584,66 @@ fun DynamicIsland(
                                                 fontSize = 11.sp,
                                                 fontWeight = FontWeight.SemiBold
                                             )
+                                        }
+                                    }
+
+                                    // Local folder library: SAF grants access only to the folder selected by the user.
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth()
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(ElevatedSurface)
+                                            .padding(10.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                                            Text("LOCAL MUSIC LIBRARY", color = PrimaryWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+                                            Text("${localTracks.size} TRACKS", color = AccentCyan, fontSize = 9.sp, fontFamily = FontFamily.Monospace)
+                                        }
+                                        Text(
+                                            text = musicFolderUri?.let { selected ->
+                                                val docId = runCatching { DocumentsContract.getTreeDocumentId(selected) }.getOrNull()
+                                                if (docId?.startsWith("primary:") == true) "/storage/emulated/0/${docId.substringAfter(':')}" else "Folder tersambung • akses SAF"
+                                            } ?: "/storage/emulated/0/music_hmmodz (contoh lokasi)",
+                                            color = MutedText, fontSize = 9.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                                        )
+                                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                                            TextButton(onClick = { folderPicker.launch(musicFolderUri) }) {
+                                                Icon(Icons.Default.FolderOpen, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(15.dp))
+                                                Text("Pilih Folder", color = AccentCyan, fontSize = 10.sp)
+                                            }
+                                            TextButton(onClick = { musicFolderUri?.let(::scanSelectedFolder) }, enabled = musicFolderUri != null && !isScanning) {
+                                                Icon(Icons.Default.Refresh, contentDescription = null, tint = SecondaryWhite, modifier = Modifier.size(15.dp))
+                                                Text("Scan Ulang", color = SecondaryWhite, fontSize = 10.sp)
+                                            }
+                                        }
+                                        OutlinedTextField(
+                                            value = musicSearch,
+                                            onValueChange = { musicSearch = it },
+                                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                                            placeholder = { Text("Cari judul lagu...", color = MutedText, fontSize = 10.sp) },
+                                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MutedText) },
+                                            singleLine = true,
+                                            textStyle = TextStyle(fontSize = 11.sp, color = PrimaryWhite),
+                                            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryWhite, unfocusedBorderColor = BorderColor, focusedTextColor = PrimaryWhite, unfocusedTextColor = SecondaryWhite)
+                                        )
+                                        Text(folderStatus, color = if (localTracks.isEmpty()) MutedText else AccentGreen, fontSize = 9.sp)
+                                        val visibleTracks = localTracks.filter { it.name.contains(musicSearch, ignoreCase = true) }
+                                        if (visibleTracks.isNotEmpty()) {
+                                            Column(modifier = Modifier.heightIn(max = 190.dp).verticalScroll(rememberScrollState())) {
+                                                visibleTracks.forEach { track ->
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp))
+                                                            .clickable { onPlayLocalUri(track.uri, track.name) }
+                                                            .padding(horizontal = 6.dp, vertical = 8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        Icon(Icons.Default.MusicNote, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(17.dp))
+                                                        Text(track.name, color = PrimaryWhite, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                                        Icon(Icons.Default.PlayArrow, contentDescription = "Play ${track.name}", tint = SecondaryWhite, modifier = Modifier.size(18.dp))
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
 
