@@ -87,4 +87,4 @@ jobs:
           name: xsd-boost-${{ github.event.inputs.build_type || 'debug' }}-apk
           path: dist/*.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
