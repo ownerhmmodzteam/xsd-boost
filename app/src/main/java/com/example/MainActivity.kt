@@ -55,7 +55,6 @@ import com.example.ui.components.DynamicIsland
 import com.example.ui.components.FloatingBottomNavigation
 import com.example.ui.screens.GameSpaceScreen
 import com.example.ui.screens.DeveloperProfileScreen
-import com.example.ui.screens.GameCenterScreen
 import com.example.ui.screens.MonitorScreen
 import com.example.ui.screens.PermissionsCenterScreen
 import com.example.ui.screens.SettingsScreen
@@ -298,25 +297,6 @@ fun MainAppContainer(viewModel: MainViewModel) {
                                         onLaunchGame = { pkg -> viewModel.launchGame(pkg) },
                                         onRunSmartBoost = { viewModel.runSmartBoost() },
                                         onToggleRogMonitor = { enabled -> viewModel.toggleOverlay(enabled) })
-                                }
-                                BottomNavTab.GAMES -> {
-                                    GameCenterScreen(
-                                        games = games,
-                                        gameProfiles = gameProfiles,
-                                        hasUsageStatsPermission = hasUsageStatsPermission,
-                                        onRefreshPermissions = { viewModel.refreshPermissions() },
-                                        onLaunchGame = { pkg -> viewModel.launchGame(pkg) },
-                                        onToggleFavorite = { pkg -> viewModel.toggleFavoriteGame(pkg) },
-                                        onToggleGameBooster = { g, en -> viewModel.toggleGameBooster(g, en) },
-                                        onUpdateGameOverlayConfig = { g, side, sizeDp, op, lpMs ->
-                                            viewModel.updateGameOverlayConfig(g, side, sizeDp, op, lpMs)
-                                        },
-                                        onSaveGameMusicUrl = { g, url -> viewModel.saveAndLoadGameMusicUrl(g, url) },
-                                        onToggleGameDynamicIsland = { g, en -> viewModel.setGameDynamicIslandEnabled(g, en) },
-                                        onSetGameHandleHidden = { g, hidden -> viewModel.setGameHandleHidden(g, hidden) },
-                                        onRestoreGameHandle = { g -> viewModel.restoreGameHandle(g) },
-                                        onResetGameProfile = { pkg -> viewModel.resetGameProfile(pkg) }
-                                    )
                                 }
                                 BottomNavTab.TOOLS -> {
                                     val shizukuStatus by viewModel.shizukuStatus.collectAsState()
