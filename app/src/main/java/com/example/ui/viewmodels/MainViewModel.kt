@@ -134,11 +134,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         refreshPermissions()
 
         viewModelScope.launch {
-            shizukuStatus.collect { status ->
-                }
-        }
-
-        viewModelScope.launch {
             val enabledGames = gameProfileRepo.enabledPackageSet.first()
             val watcherOn = prefsRepo.isSmartWatcherEnabled.first()
             val app = getApplication<Application>()
