@@ -34,8 +34,6 @@ data class BubblePosition(
 class UserPreferencesRepository(private val context: Context) {
 
     companion object {
-        val SENSITIVITY_X = intPreferencesKey("sensitivity_x")
-        val SENSITIVITY_Y = intPreferencesKey("sensitivity_y")
         val OVERLAY_ENABLED = booleanPreferencesKey("overlay_enabled")
         val CROSSHAIR_ENABLED = booleanPreferencesKey("crosshair_enabled")
         val OVERLAY_OPACITY = floatPreferencesKey("overlay_opacity")
@@ -73,14 +71,8 @@ class UserPreferencesRepository(private val context: Context) {
         val DEFAULT_HANDLE_SIZE_DP = floatPreferencesKey("default_handle_size_dp")
         val DEFAULT_HANDLE_OPACITY = floatPreferencesKey("default_handle_opacity")
         val DEFAULT_LONG_PRESS_MS = longPreferencesKey("default_long_press_ms")
-        val SENSITIVITY_BASELINE_X = intPreferencesKey("sensitivity_baseline_x")
-        val SENSITIVITY_BASELINE_Y = intPreferencesKey("sensitivity_baseline_y")
     }
 
-    val sensitivityX: Flow<Int> = context.dataStore.data.map { it[SENSITIVITY_X] ?: 1 }
-    val sensitivityY: Flow<Int> = context.dataStore.data.map { it[SENSITIVITY_Y] ?: 1 }
-    val sensitivityBaselineX: Flow<Int> = context.dataStore.data.map { it[SENSITIVITY_BASELINE_X] ?: 1 }
-    val sensitivityBaselineY: Flow<Int> = context.dataStore.data.map { it[SENSITIVITY_BASELINE_Y] ?: 1 }
     val isOverlayEnabled: Flow<Boolean> = context.dataStore.data.map { it[OVERLAY_ENABLED] ?: false }
     val isCrosshairEnabled: Flow<Boolean> = context.dataStore.data.map { it[CROSSHAIR_ENABLED] ?: false }
     val overlayOpacity: Flow<Float> = context.dataStore.data.map { it[OVERLAY_OPACITY] ?: 0.90f }
@@ -135,20 +127,6 @@ class UserPreferencesRepository(private val context: Context) {
             positionX = prefs[CROSSHAIR_POSITION_X] ?: 0.5f,
             positionY = prefs[CROSSHAIR_POSITION_Y] ?: 0.5f
         )
-    }
-
-    suspend fun setSensitivity(x: Int, y: Int) {
-        context.dataStore.edit {
-            it[SENSITIVITY_X] = x.coerceIn(1, 26)
-            it[SENSITIVITY_Y] = y.coerceIn(1, 26)
-        }
-    }
-
-    suspend fun setSensitivityBaseline(x: Int, y: Int) {
-        context.dataStore.edit {
-            it[SENSITIVITY_BASELINE_X] = x.coerceIn(1, 26)
-            it[SENSITIVITY_BASELINE_Y] = y.coerceIn(1, 26)
-        }
     }
 
     suspend fun setOverlayEnabled(enabled: Boolean) {
