@@ -37,7 +37,6 @@ import com.example.core.system.fps.FpsEstimator
 import com.example.core.system.hardware.SystemStats
 import com.example.core.system.media.MusicPlayerState
 import com.example.core.system.screenshot.ScreenshotActivity
-import com.example.core.system.sensitivity.InputCompatibilityLayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -564,10 +563,6 @@ class FloatingOverlayService : Service() {
                 val lastReport by lastBoosterReportFlow.collectAsState()
                 val musicState by musicPlayer.state.collectAsState()
                 val allMusicHistory by musicPlayer.historyList.collectAsState()
-                val sensitivityPresets by (gameProfileRepo.sensitivityPresets ?: flowOf(emptyList())).collectAsState(initial = emptyList())
-                val compatibilityReport = remember {
-                    InputCompatibilityLayer.inspect(this@FloatingOverlayService, container.shizukuBridge.status.value)
-                }
                 val gameFilteredHistory = remember(allMusicHistory, resolvedProfile.packageName) {
                     val exact = allMusicHistory.filter { it.gamePackageName == resolvedProfile.packageName }
                     exact.ifEmpty { allMusicHistory }
@@ -642,21 +637,6 @@ class FloatingOverlayService : Service() {
                                 crosshairOpacity = cfg.opacity
                             )
                         }
-                    },
-                    sensX = resolvedProfile.sensitivityX,
-                    sensY = resolvedProfile.sensitivityY,
-                    sensitivityPresets = sensitivityPresets,
-                    compatibilityReport = compatibilityReport,
-                    onSaveSensitivity = { x, y ->
-                        updateActiveGameOrPreview { it.copy(sensitivityX = x, sensitivityY = y) }
-                    },
-                    onSaveSensitivityPreset = { name, x, y ->
-                        serviceScope.launch {
-                            gameProfileRepo.saveSensitivityPreset(name, x, y, resolvedProfile.packageName)
-                        }
-                    },
-                    onDeleteSensitivityPreset = { id ->
-                        serviceScope.launch { gameProfileRepo.deleteSensitivityPreset(id) }
                     },
                     graphicsInfo = graphicsInfo,
                     graphicsProfiles = graphicsProfiles,
