@@ -7,7 +7,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.XsdBoostApplication
 import com.example.core.database.GameProfileEntity
-import com.example.core.database.SensitivityPresetEntity
 import com.example.core.system.booster.RamAnalysisReport
 import com.example.core.system.crosshair.CrosshairConfig
 import com.example.core.system.fps.FpsEstimator
@@ -23,8 +22,6 @@ import com.example.core.system.overlay.FloatingOverlayService
 import com.example.core.system.prefs.EdgeSwipeConfig
 import com.example.core.system.scanner.AppSecurityReport
 import com.example.core.system.scanner.AppSecurityScanner
-import com.example.core.system.sensitivity.InputCompatibilityLayer
-import com.example.core.system.sensitivity.InputCompatibilityReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,7 +29,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
@@ -84,17 +80,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .map { list -> list.associateBy { it.packageName } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    val sensitivityPresets: StateFlow<List<SensitivityPresetEntity>> =
-        (gameProfileRepo.sensitivityPresets ?: flowOf(emptyList()))
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
     private val _hasUsageStatsPermission = MutableStateFlow(foregroundMonitor.hasUsageStatsPermission())
     val hasUsageStatsPermission: StateFlow<Boolean> = _hasUsageStatsPermission.asStateFlow()
-
-    private val _inputCompatibilityReport = MutableStateFlow(
-        InputCompatibilityLayer.inspect(application, shizukuStatus.value)
-    )
-    val inputCompatibilityReport: StateFlow<InputCompatibilityReport> = _inputCompatibilityReport.asStateFlow()
 
     // Booster State
     private val _isBoosting = MutableStateFlow(false)
@@ -116,10 +103,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val graphicsProfiles: List<GraphicsPresetProfile> = graphicsEngine.getPresetProfiles()
 
-    val sensitivityX = prefsRepo.sensitivityX.stateIn(viewModelScope, SharingStarted.Eagerly, 1)
-    val sensitivityY = prefsRepo.sensitivityY.stateIn(viewModelScope, SharingStarted.Eagerly, 1)
-    val sensitivityBaselineX = prefsRepo.sensitivityBaselineX.stateIn(viewModelScope, SharingStarted.Eagerly, 1)
-    val sensitivityBaselineY = prefsRepo.sensitivityBaselineY.stateIn(viewModelScope, SharingStarted.Eagerly, 1)
 
     val isOverlayEnabled = prefsRepo.isOverlayEnabled.stateIn(viewModelScope, SharingStarted.Eagerly, false)
     val isCrosshairEnabled = prefsRepo.isCrosshairEnabled.stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -152,8 +135,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             shizukuStatus.collect { status ->
-                _inputCompatibilityReport.value = InputCompatibilityLayer.inspect(getApplication(), status)
-            }
+                }
         }
 
         viewModelScope.launch {
@@ -174,7 +156,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshPermissions() {
         _hasUsageStatsPermission.value = foregroundMonitor.hasUsageStatsPermission()
-        _inputCompatibilityReport.value = InputCompatibilityLayer.inspect(getApplication(), shizukuStatus.value)
     }
 
     private fun startTelemetryLoop() {
@@ -240,14 +221,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     prefsRepo.setOverlayEnabled(true)
                     GameDetectionForegroundService.start(app)
                 }
-            }
-        }
-    }
-
-    fun updateGameSensitivity(game: GameApp, x: Int, y: Int) {
-        viewModelScope.launch {
-            gameProfileRepo.updateProfile(game.packageName, game.appName) {
-                it.copy(sensitivityX = x.coerceIn(1, 26), sensitivityY = y.coerceIn(1, 26))
             }
         }
     }
@@ -382,32 +355,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             _scanReports.value = reports
             _isScanning.value = false
-        }
-    }
-
-    fun setSensitivity(x: Int, y: Int) {
-        viewModelScope.launch {
-            prefsRepo.setSensitivity(x, y)
-        }
-    }
-
-    fun saveSensitivityPreset(name: String, x: Int, y: Int) {
-        viewModelScope.launch {
-            gameProfileRepo.saveSensitivityPreset(name, x, y)
-            prefsRepo.setSensitivityBaseline(x, y)
-        }
-    }
-
-    fun loadSensitivityPreset(preset: SensitivityPresetEntity) {
-        viewModelScope.launch {
-            prefsRepo.setSensitivity(preset.sensitivityX, preset.sensitivityY)
-            prefsRepo.setSensitivityBaseline(preset.sensitivityX, preset.sensitivityY)
-        }
-    }
-
-    fun deleteSensitivityPreset(id: Long) {
-        viewModelScope.launch {
-            gameProfileRepo.deleteSensitivityPreset(id)
         }
     }
 
