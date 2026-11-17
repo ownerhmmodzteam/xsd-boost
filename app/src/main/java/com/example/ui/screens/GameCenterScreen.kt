@@ -450,7 +450,7 @@ fun GameCardItem(
                 Text(
                     text = if (profile != null) {
                         val sideShort = if (profile.overlaySide.equals("LEFT", ignoreCase = true)) "Left" else "Right"
-                        "Sens ${profile.sensitivityX}:${profile.sensitivityY} • ${if (profile.isHandleHidden) "Hidden" else sideShort}"
+                        "Booster • ${if (profile.isHandleHidden) "Hidden" else sideShort}"
                     } else {
                         "v${game.versionName} • ${(game.sizeBytes / (1024 * 1024))} MB"
                     },
