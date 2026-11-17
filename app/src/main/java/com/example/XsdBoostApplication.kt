@@ -35,7 +35,7 @@ class XsdSystemContainer(context: Context) {
     }
 
     val gameProfileRepo: GameProfileRepository by lazy {
-        GameProfileRepository(database.gameProfileDao(), database.sensitivityPresetDao())
+        GameProfileRepository(database.gameProfileDao())
     }
     val foregroundMonitor: ForegroundGameMonitor by lazy {
         ForegroundGameMonitor(appContext)
