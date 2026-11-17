@@ -11,11 +11,9 @@
 - Local document-picker integration was not found in the supplied source at inspection time. Do not advertise local-file playback as implemented until a SAF picker, persisted URI permission, and Media3 URI loading are connected.
 - YouTube playback must use the official YouTube IFrame Player API/WebView integration and comply with YouTube terms. Do not extract stream URLs or bypass playback restrictions.
 
-## Sensitivity status
-- Existing X/Y values and game profiles are local settings.
-- `InputCompatibilityLayer` explicitly reports that it cannot alter a game's internal touch/camera sensitivity through public Android APIs.
-- The visual calibration pad is a local simulation only. Do not report these values as applied to Free Fire.
-- Shizuku does not grant permission to inject touch events into or modify another game's process.
+## Sensitivity X/Y status
+- Sensitivity X/Y controls, presets, simulation, callbacks, preference keys, and compatibility code have been removed from active app functionality.
+- Inert Room schema columns are retained solely to avoid wiping existing game profiles during an upgrade; no runtime code reads or writes them.
 
 ## Shizuku and Rish
 - Existing Shizuku API/Binder/UserService implementation is retained.
