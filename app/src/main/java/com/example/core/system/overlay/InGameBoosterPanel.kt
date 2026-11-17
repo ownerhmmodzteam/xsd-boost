@@ -57,14 +57,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ScreenshotFeedback
 import com.example.core.database.MusicHistoryEntity
-import com.example.core.database.SensitivityPresetEntity
 import com.example.core.system.booster.RamAnalysisReport
 import com.example.core.system.crosshair.CrosshairConfig
 import com.example.core.system.graphics.GraphicsHardwareInfo
 import com.example.core.system.graphics.GraphicsPresetProfile
 import com.example.core.system.hardware.SystemStats
 import com.example.core.system.media.MusicPlayerState
-import com.example.core.system.sensitivity.InputCompatibilityReport
 import com.example.ui.theme.AccentAmber
 import com.example.ui.theme.AccentGreen
 import com.example.ui.theme.BgPrimary
@@ -115,13 +113,6 @@ fun InGameBoosterPanel(
     crosshairConfig: CrosshairConfig,
     onToggleCrosshair: (Boolean) -> Unit,
     onUpdateCrosshair: (CrosshairConfig) -> Unit,
-    sensX: Int,
-    sensY: Int,
-    sensitivityPresets: List<SensitivityPresetEntity> = emptyList(),
-    compatibilityReport: InputCompatibilityReport? = null,
-    onSaveSensitivity: (Int, Int) -> Unit,
-    onSaveSensitivityPreset: (String, Int, Int) -> Unit = { _, _, _ -> },
-    onDeleteSensitivityPreset: (Long) -> Unit = {},
     graphicsInfo: GraphicsHardwareInfo,
     graphicsProfiles: List<GraphicsPresetProfile>,
     selectedGraphicsProfileId: String,
