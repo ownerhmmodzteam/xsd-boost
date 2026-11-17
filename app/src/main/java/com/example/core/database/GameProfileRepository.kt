@@ -4,13 +4,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class GameProfileRepository(
-    private val dao: GameProfileDao,
-    private val presetDao: SensitivityPresetDao? = null
+    private val dao: GameProfileDao
 ) {
 
     val allProfiles: Flow<List<GameProfileEntity>> = dao.observeAllProfiles()
     val enabledProfiles: Flow<List<GameProfileEntity>> = dao.observeEnabledProfiles()
-    val sensitivityPresets: Flow<List<SensitivityPresetEntity>>? = presetDao?.observeAllPresets()
 
     val enabledPackageSet: Flow<Set<String>> = enabledProfiles.map { list ->
         list.map { it.packageName }.toSet()
@@ -93,22 +91,7 @@ class GameProfileRepository(
         return reset
     }
 
-    suspend fun saveSensitivityPreset(name: String, x: Int, y: Int, gamePackageName: String = ""): Long? {
-        val daoRef = presetDao ?: return null
-        val cleanName = name.trim().ifEmpty { "Preset ${x}x${y}" }
-        return daoRef.insert(
-            SensitivityPresetEntity(
-                name = cleanName,
-                gamePackageName = gamePackageName,
-                sensitivityX = x.coerceIn(1, 26),
-                sensitivityY = y.coerceIn(1, 26)
-            )
-        )
-    }
 
-    suspend fun deleteSensitivityPreset(id: Long) {
-        presetDao?.deleteById(id)
-    }
 }
 
 fun GameProfileEntity.toCrosshairConfig(): com.example.core.system.crosshair.CrosshairConfig {
