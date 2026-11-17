@@ -15,9 +15,9 @@ This source package has not been compiled in this environment. Shizuku behavior,
 
 
 ## Final Game Booster layout request (2026-11-13)
-- Added directional Crosshair position controls and center reset alongside X/Y sliders.
+- Added directional Crosshair position controls (up, down, left, right) in Tools and the in-game Aim overlay.
 - New game profiles now default the edge handle to the LEFT side. Existing profiles are not forcibly overwritten.
-- Retained the five requested priorities as the product direction: Perf, Aim, Sensitivity X/Y, Music, Resolution.
+- Removed Sensitivity X/Y completely from active app functionality. Game selection now lives in Home > Game Space.
 - See README_FINAL_GAME_BOOSTER_LAYOUT.md for the exact implementation status and platform limitations.
 
 
