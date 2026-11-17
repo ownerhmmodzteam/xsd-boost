@@ -5,9 +5,10 @@
 - Added `app/src/main/assets/game_backgrounds/` for bundled landscape MP4 backgrounds.
 - Added live device metrics cards and a ROG-style floating monitor toggle using the existing Android overlay service.
 - Added Smart Boost shortcut using the existing memory analysis/cache maintenance workflow.
-- Added installed-game quick launch cards.
+- Replaced the legacy Games tab with Home > Game Space. The picker lists installed games; the preview starts empty with 0 selected games until the user adds titles.
+- Added a + control at the upper-left of Game Preview to open the game picker.
 - Added crosshair D-pad position controls in Tools and the in-game Aim panel.
-- Removed Sensitivity X/Y controls from the Game Center, Tools selector, and in-game tool tabs. Legacy profile/database fields are retained only for backward compatibility.
+- Removed the active Sensitivity X/Y feature end-to-end: overlay controls, presets, callbacks, ViewModel actions, preferences, compatibility simulator, and legacy Game Center screen. Only inert Room schema fields remain to avoid destructive user-data migration.
 - Kept the existing Dynamic Island music player as the app-wide music control surface.
 
 ## Add your videos
