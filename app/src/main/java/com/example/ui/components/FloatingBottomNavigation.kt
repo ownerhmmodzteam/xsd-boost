@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Monitor
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,7 +37,6 @@ import com.example.ui.theme.PrimaryWhite
 
 enum class BottomNavTab(val title: String, val icon: ImageVector) {
     HOME("Home", Icons.Default.Home),
-    GAMES("Games", Icons.Default.SportsEsports),
     TOOLS("Tools", Icons.Default.Build),
     MONITOR("Monitor", Icons.Default.Monitor),
     SETTINGS("Settings", Icons.Default.Settings)
