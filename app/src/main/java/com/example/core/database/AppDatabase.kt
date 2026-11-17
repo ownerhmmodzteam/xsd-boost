@@ -21,6 +21,8 @@ data class MusicHistoryEntity(
     val playedAt: Long = System.currentTimeMillis()
 )
 
+// Legacy Room schema retained for existing v3 database compatibility only.
+// No DAO, UI, or runtime feature reads or writes this table.
 @Entity(tableName = "sensitivity_presets")
 data class SensitivityPresetEntity(
     @PrimaryKey(autoGenerate = true)
@@ -38,6 +40,7 @@ data class GameProfileEntity(
     val packageName: String,
     val appName: String,
     val boosterEnabled: Boolean = false,
+    // Legacy persisted columns; intentionally unused by the application.
     val sensitivityX: Int = 1,
     val sensitivityY: Int = 1,
     val crosshairEnabled: Boolean = false,
@@ -81,18 +84,6 @@ interface MusicHistoryDao {
 }
 
 @Dao
-interface SensitivityPresetDao {
-    @Query("SELECT * FROM sensitivity_presets ORDER BY createdAt DESC")
-    fun observeAllPresets(): Flow<List<SensitivityPresetEntity>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(preset: SensitivityPresetEntity): Long
-
-    @Query("DELETE FROM sensitivity_presets WHERE id = :id")
-    suspend fun deleteById(id: Long)
-}
-
-@Dao
 interface GameProfileDao {
     @Query("SELECT * FROM game_profiles ORDER BY updatedAt DESC")
     fun observeAllProfiles(): Flow<List<GameProfileEntity>>
@@ -121,5 +112,4 @@ interface GameProfileDao {
 abstract class AppDatabase : RoomDatabase() {
     abstract fun musicHistoryDao(): MusicHistoryDao
     abstract fun gameProfileDao(): GameProfileDao
-    abstract fun sensitivityPresetDao(): SensitivityPresetDao
 }
