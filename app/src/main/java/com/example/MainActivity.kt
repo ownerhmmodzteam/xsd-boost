@@ -53,7 +53,7 @@ import kotlinx.coroutines.delay
 import com.example.ui.components.BottomNavTab
 import com.example.ui.components.DynamicIsland
 import com.example.ui.components.FloatingBottomNavigation
-import com.example.ui.screens.DashboardScreen
+import com.example.ui.screens.GameSpaceScreen
 import com.example.ui.screens.DeveloperProfileScreen
 import com.example.ui.screens.GameCenterScreen
 import com.example.ui.screens.MonitorScreen
@@ -213,12 +213,6 @@ fun MainAppContainer(viewModel: MainViewModel) {
     val graphicsInfo by viewModel.graphicsInfo.collectAsState()
     val selectedGraphicsProfileId by viewModel.selectedGraphicsProfileId.collectAsState()
 
-    val sensitivityX by viewModel.sensitivityX.collectAsState()
-    val sensitivityY by viewModel.sensitivityY.collectAsState()
-    val sensitivityBaselineX by viewModel.sensitivityBaselineX.collectAsState()
-    val sensitivityBaselineY by viewModel.sensitivityBaselineY.collectAsState()
-    val sensitivityPresets by viewModel.sensitivityPresets.collectAsState()
-    val inputCompatibilityReport by viewModel.inputCompatibilityReport.collectAsState()
 
     val crosshairConfig by viewModel.crosshairConfig.collectAsState()
     val isCrosshairOverlayActive by viewModel.isCrosshairEnabled.collectAsState()
@@ -299,15 +293,11 @@ fun MainAppContainer(viewModel: MainViewModel) {
                         AppSubScreen.MAIN_NAV -> {
                             when (selectedTab) {
                                 BottomNavTab.HOME -> {
-                                    DashboardScreen(
-                                        stats = stats,
-                                        fps = fps,
-                                        cpuHistory = cpuHistory,
-                                        ramHistory = ramHistory,
-                                        tempHistory = tempHistory,
-                                        fpsHistory = fpsHistory,
-                                        onSmartBoostClick = { viewModel.runSmartBoost() }
-                                    )
+                                    GameSpaceScreen(stats = stats, fps = fps, games = games, musicState = musicState,
+                                        isRogOverlayActive = isOverlayActive,
+                                        onLaunchGame = { pkg -> viewModel.launchGame(pkg) },
+                                        onRunSmartBoost = { viewModel.runSmartBoost() },
+                                        onToggleRogMonitor = { enabled -> viewModel.toggleOverlay(enabled) })
                                 }
                                 BottomNavTab.GAMES -> {
                                     GameCenterScreen(
@@ -318,7 +308,6 @@ fun MainAppContainer(viewModel: MainViewModel) {
                                         onLaunchGame = { pkg -> viewModel.launchGame(pkg) },
                                         onToggleFavorite = { pkg -> viewModel.toggleFavoriteGame(pkg) },
                                         onToggleGameBooster = { g, en -> viewModel.toggleGameBooster(g, en) },
-                                        onUpdateGameSensitivity = { g, x, y -> viewModel.updateGameSensitivity(g, x, y) },
                                         onUpdateGameOverlayConfig = { g, side, sizeDp, op, lpMs ->
                                             viewModel.updateGameOverlayConfig(g, side, sizeDp, op, lpMs)
                                         },
@@ -339,16 +328,6 @@ fun MainAppContainer(viewModel: MainViewModel) {
                                         isCrosshairOverlayActive = isCrosshairOverlayActive,
                                         onSaveCrosshairConfig = { cfg -> viewModel.saveCrosshairConfig(cfg) },
                                         onToggleCrosshairOverlay = { en -> viewModel.toggleCrosshairOverlay(en) },
-                                        sensitivityX = sensitivityX,
-                                        sensitivityY = sensitivityY,
-                                        sensitivityBaselineX = sensitivityBaselineX,
-                                        sensitivityBaselineY = sensitivityBaselineY,
-                                        sensitivityPresets = sensitivityPresets,
-                                        inputCompatibilityReport = inputCompatibilityReport,
-                                        onSaveSensitivity = { x, y -> viewModel.setSensitivity(x, y) },
-                                        onSaveSensitivityPreset = { name, x, y -> viewModel.saveSensitivityPreset(name, x, y) },
-                                        onLoadSensitivityPreset = { preset -> viewModel.loadSensitivityPreset(preset) },
-                                        onDeleteSensitivityPreset = { id -> viewModel.deleteSensitivityPreset(id) },
                                         scanReports = scanReports,
                                         isScanning = isScanning,
                                         onRunSecurityScan = { viewModel.runApkSecurityScan() },

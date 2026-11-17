@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
@@ -93,7 +92,6 @@ fun GameCenterScreen(
     onLaunchGame: (String) -> Unit,
     onToggleFavorite: (String) -> Unit,
     onToggleGameBooster: (GameApp, Boolean) -> Unit,
-    onUpdateGameSensitivity: (GameApp, Int, Int) -> Unit,
     onUpdateGameOverlayConfig: (GameApp, com.example.core.system.overlay.EdgeSide, Float, Float, Long) -> Unit = { _, _, _, _, _ -> },
     onSaveGameMusicUrl: (GameApp, String) -> Unit,
     onToggleGameDynamicIsland: (GameApp, Boolean) -> Unit,
@@ -342,7 +340,6 @@ fun GameCenterScreen(
             game = targetGame,
             profile = currentProfile,
             onDismiss = { editingGame = null },
-            onUpdateSensitivity = { x, y -> onUpdateGameSensitivity(targetGame, x, y) },
             onUpdateOverlayConfig = { side, sizeDp, opacity, lpMs ->
                 onUpdateGameOverlayConfig(targetGame, side, sizeDp, opacity, lpMs)
             },
@@ -551,7 +548,6 @@ private fun GameProfileConfigDialog(
     game: GameApp,
     profile: GameProfileEntity,
     onDismiss: () -> Unit,
-    onUpdateSensitivity: (Int, Int) -> Unit,
     onUpdateOverlayConfig: (com.example.core.system.overlay.EdgeSide, Float, Float, Long) -> Unit,
     onLoadMusicUrl: (String) -> Unit,
     onToggleDynamicIsland: (Boolean) -> Unit,
@@ -559,8 +555,6 @@ private fun GameProfileConfigDialog(
     onRestoreHandle: () -> Unit,
     onResetProfile: () -> Unit
 ) {
-    var sensX by remember(profile.sensitivityX) { mutableIntStateOf(profile.sensitivityX) }
-    var sensY by remember(profile.sensitivityY) { mutableIntStateOf(profile.sensitivityY) }
     var musicUrl by remember(profile.musicUrl) { mutableStateOf(profile.musicUrl) }
     var overlaySide by remember(profile.overlaySide) {
         mutableStateOf(com.example.core.system.overlay.EdgeSide.fromString(profile.overlaySide))
@@ -653,27 +647,6 @@ private fun GameProfileConfigDialog(
                         onUpdateOverlayConfig(overlaySide, handleSizeDp, handleOpacity, longPressMs)
                     },
                     valueRange = 250f..800f,
-                    colors = SliderDefaults.colors(thumbColor = PrimaryWhite, activeTrackColor = PrimaryWhite)
-                )
-
-                Text("Sensitivity X: $sensX / 26", color = SecondaryWhite, fontSize = 11.sp)
-                Slider(
-                    value = sensX.toFloat(),
-                    onValueChange = {
-                        sensX = it.toInt().coerceIn(1, 26)
-                        onUpdateSensitivity(sensX, sensY)
-                    },
-                    valueRange = 1f..26f,
-                    colors = SliderDefaults.colors(thumbColor = PrimaryWhite, activeTrackColor = PrimaryWhite)
-                )
-                Text("Sensitivity Y: $sensY / 26", color = SecondaryWhite, fontSize = 11.sp)
-                Slider(
-                    value = sensY.toFloat(),
-                    onValueChange = {
-                        sensY = it.toInt().coerceIn(1, 26)
-                        onUpdateSensitivity(sensX, sensY)
-                    },
-                    valueRange = 1f..26f,
                     colors = SliderDefaults.colors(thumbColor = PrimaryWhite, activeTrackColor = PrimaryWhite)
                 )
 

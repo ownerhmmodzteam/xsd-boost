@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.DisplaySettings
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Terminal
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -54,7 +53,6 @@ import com.example.ui.screens.tools.apkScannerSection
 import com.example.ui.screens.tools.crosshairStudioSection
 import com.example.ui.screens.tools.graphicsDriverSection
 import com.example.ui.screens.tools.ramBoosterSection
-import com.example.ui.screens.tools.sensitivityControllerSection
 import com.example.ui.screens.tools.shizukuEngineSection
 import com.example.ui.theme.BgPrimary
 import com.example.ui.theme.BorderActive
@@ -69,7 +67,6 @@ enum class ActiveToolSection(val title: String, val icon: ImageVector) {
     SHIZUKU_ENGINE("Shizuku Engine", Icons.Default.Terminal),
     RAM_BOOSTER("RAM Booster", Icons.Default.CleaningServices),
     CROSSHAIR("Crosshair Studio", Icons.Default.CenterFocusStrong),
-    SENSITIVITY("Sensitivity X/Y", Icons.Default.Tune),
     SCANNER("APK Scanner", Icons.Default.Security),
     GRAPHICS("Graphics Driver", Icons.Default.DisplaySettings)
 }
@@ -85,17 +82,6 @@ fun ToolsScreen(
     isCrosshairOverlayActive: Boolean,
     onSaveCrosshairConfig: (CrosshairConfig) -> Unit,
     onToggleCrosshairOverlay: (Boolean) -> Unit,
-    // Sensitivity props
-    sensitivityX: Int,
-    sensitivityY: Int,
-    sensitivityBaselineX: Int = 1,
-    sensitivityBaselineY: Int = 1,
-    sensitivityPresets: List<com.example.core.database.SensitivityPresetEntity> = emptyList(),
-    inputCompatibilityReport: com.example.core.system.sensitivity.InputCompatibilityReport? = null,
-    onSaveSensitivity: (Int, Int) -> Unit,
-    onSaveSensitivityPreset: (String, Int, Int) -> Unit = { _, _, _ -> },
-    onLoadSensitivityPreset: (com.example.core.database.SensitivityPresetEntity) -> Unit = {},
-    onDeleteSensitivityPreset: (Long) -> Unit = {},
     // Scanner props
     scanReports: List<AppSecurityReport>,
     isScanning: Boolean,
@@ -122,9 +108,6 @@ fun ToolsScreen(
     var touchFeedbackMessage by remember { mutableStateOf<String?>(null) }
     var graphicsApplyResult by remember { mutableStateOf<String?>(null) }
     var localCrosshairConfig by remember(crosshairConfig) { mutableStateOf(crosshairConfig) }
-    val resolvedCompatibilityReport = inputCompatibilityReport ?: remember(shizukuStatus) {
-        com.example.core.system.sensitivity.InputCompatibilityLayer.inspect(context, shizukuStatus)
-    }
 
     LazyColumn(
         state = listState,
@@ -236,24 +219,6 @@ fun ToolsScreen(
                     onSaveCrosshairConfig(updated)
                 },
                 onToggleOverlay = onToggleCrosshairOverlay
-            )
-            ActiveToolSection.SENSITIVITY -> sensitivityControllerSection(
-                sensX = sensitivityX,
-                sensY = sensitivityY,
-                baselineX = sensitivityBaselineX,
-                baselineY = sensitivityBaselineY,
-                presets = sensitivityPresets,
-                compatibilityReport = resolvedCompatibilityReport,
-                touchFeedbackMessage = touchFeedbackMessage,
-                onCalibrateTouch = {
-                    coroutineScope.launch {
-                        touchFeedbackMessage = shizukuBridge.optimizeTouchSamplingRate()
-                    }
-                },
-                onSave = onSaveSensitivity,
-                onSavePreset = onSaveSensitivityPreset,
-                onLoadPreset = onLoadSensitivityPreset,
-                onDeletePreset = onDeleteSensitivityPreset
             )
             ActiveToolSection.SCANNER -> apkScannerSection(
                 reports = scanReports,

@@ -447,6 +447,30 @@ fun OverlayCrosshairTool(
             )
         }
 
+        Column(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+                .background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(12.dp)).padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text("POSISI CROSSHAIR", color = PrimaryWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Box(Modifier.size(38.dp).clip(RoundedCornerShape(9.dp)).background(ElevatedSurface).clickable {
+                onUpdateConfig(config.copy(positionY = (config.positionY - 0.025f).coerceIn(0f, 1f)))
+            }, contentAlignment = Alignment.Center) { Text("↑", color = PrimaryWhite, fontSize = 18.sp) }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(38.dp).clip(RoundedCornerShape(9.dp)).background(ElevatedSurface).clickable {
+                    onUpdateConfig(config.copy(positionX = (config.positionX - 0.025f).coerceIn(0f, 1f)))
+                }, contentAlignment = Alignment.Center) { Text("←", color = PrimaryWhite, fontSize = 18.sp) }
+                Text("X ${(config.positionX * 100).toInt()}%\nY ${(config.positionY * 100).toInt()}%", color = SecondaryWhite, fontSize = 10.sp)
+                Box(Modifier.size(38.dp).clip(RoundedCornerShape(9.dp)).background(ElevatedSurface).clickable {
+                    onUpdateConfig(config.copy(positionX = (config.positionX + 0.025f).coerceIn(0f, 1f)))
+                }, contentAlignment = Alignment.Center) { Text("→", color = PrimaryWhite, fontSize = 18.sp) }
+            }
+            Box(Modifier.size(38.dp).clip(RoundedCornerShape(9.dp)).background(ElevatedSurface).clickable {
+                onUpdateConfig(config.copy(positionY = (config.positionY + 0.025f).coerceIn(0f, 1f)))
+            }, contentAlignment = Alignment.Center) { Text("↓", color = PrimaryWhite, fontSize = 18.sp) }
+        }
+
         Text("Desain Crosshair", color = MutedText, fontSize = 10.sp)
         Row(
             modifier = Modifier

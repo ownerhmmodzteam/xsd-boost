@@ -173,6 +173,34 @@ fun LazyListScope.crosshairStudioSection(
         }
     }
 
+    item(key = "crosshair_position_pad") {
+        Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(ToolCardBrush)
+            .border(1.dp, BorderColor, RoundedCornerShape(18.dp)).padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text("POSITION CONTROL", color = PrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text("Geser crosshair dengan tombol arah", color = MutedText, fontSize = 10.sp)
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(ElevatedSurface).clickable {
+                onUpdateConfig(config.copy(positionY = (config.positionY - 0.025f).coerceIn(0f, 1f)))
+            }, contentAlignment = Alignment.Center) { Text("↑", color = PrimaryWhite, fontSize = 20.sp) }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(ElevatedSurface).clickable {
+                    onUpdateConfig(config.copy(positionX = (config.positionX - 0.025f).coerceIn(0f, 1f)))
+                }, contentAlignment = Alignment.Center) { Text("←", color = PrimaryWhite, fontSize = 20.sp) }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("X ${(config.positionX * 100).toInt()}%", color = PrimaryWhite, fontSize = 11.sp)
+                    Text("Y ${(config.positionY * 100).toInt()}%", color = MutedText, fontSize = 10.sp)
+                }
+                Box(Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(ElevatedSurface).clickable {
+                    onUpdateConfig(config.copy(positionX = (config.positionX + 0.025f).coerceIn(0f, 1f)))
+                }, contentAlignment = Alignment.Center) { Text("→", color = PrimaryWhite, fontSize = 20.sp) }
+            }
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(10.dp)).background(ElevatedSurface).clickable {
+                onUpdateConfig(config.copy(positionY = (config.positionY + 0.025f).coerceIn(0f, 1f)))
+            }, contentAlignment = Alignment.Center) { Text("↓", color = PrimaryWhite, fontSize = 20.sp) }
+            Text("Langkah 2,5% per sentuhan", color = MutedText, fontSize = 9.sp)
+        }
+    }
+
     item(key = "crosshair_sliders") {
         Box(
             modifier = Modifier

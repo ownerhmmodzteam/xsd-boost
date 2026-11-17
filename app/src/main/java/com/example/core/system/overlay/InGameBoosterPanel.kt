@@ -34,7 +34,6 @@ import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -80,7 +79,6 @@ import com.example.ui.theme.SecondaryWhite
 enum class OverlayToolTab(val label: String, val icon: ImageVector) {
     PERFORMANCE("Perf", Icons.Default.Speed),
     CROSSHAIR("Aim", Icons.Default.GpsFixed),
-    SENSITIVITY("Sens", Icons.Default.Tune),
     GRAPHICS("GPU", Icons.Default.AutoAwesome),
     RAM_SYSTEM("RAM", Icons.Default.Memory),
     MUSIC("Music", Icons.Default.MusicNote),
@@ -392,15 +390,6 @@ fun InGameBoosterPanel(
                             config = crosshairConfig,
                             onToggleCrosshair = onToggleCrosshair,
                             onUpdateConfig = onUpdateCrosshair
-                        )
-                        OverlayToolTab.SENSITIVITY -> OverlaySensitivityTool(
-                            sensX = sensX,
-                            sensY = sensY,
-                            savedPresets = sensitivityPresets,
-                            compatibilityReport = compatibilityReport,
-                            onSaveSensitivity = onSaveSensitivity,
-                            onSavePreset = onSaveSensitivityPreset,
-                            onDeletePreset = onDeleteSensitivityPreset
                         )
                         OverlayToolTab.GRAPHICS -> OverlayGraphicsTool(
                             hardwareInfo = graphicsInfo,
