@@ -28,14 +28,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -95,6 +98,9 @@ fun GameSpaceScreen(
     var selectedBundledIndex by remember { mutableIntStateOf(0) }
     var selectedExternalVideo by remember { mutableStateOf<Uri?>(null) }
     var videoVolume by remember { mutableStateOf(0f) }
+    var showGamePicker by remember { mutableStateOf(false) }
+    var selectedGamePackages by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val selectedGames = remember(games, selectedGamePackages) { games.filter { it.packageName in selectedGamePackages } }
     val videoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             try { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) {}
@@ -206,20 +212,55 @@ fun GameSpaceScreen(
             ActionCard(if (isRogOverlayActive) "ROG MONITOR ON" else "FLOATING ROG MONITOR", "Tampilkan metrik perangkat di atas game", Icons.Default.Speed, Modifier.weight(1f)) { onToggleRogMonitor(!isRogOverlayActive) }
         }
 
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(18.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
+                .background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(18.dp)).padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text("GAME LIBRARY", color = PrimaryWhite, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                    Text("${games.size} installed games", color = MutedText, fontSize = 10.sp)
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("GAME SPACE", color = PrimaryWhite, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                    Text("${selectedGames.size} games selected", color = MutedText, fontSize = 10.sp)
                 }
-                Icon(Icons.Default.Gamepad, null, tint = AccentGreen)
+                Button(
+                    onClick = { showGamePicker = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen, contentColor = BgPrimary),
+                    contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp)
+                ) {
+                    Icon(Icons.Default.Gamepad, null, modifier = Modifier.size(15.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("GAME SPACE", fontSize = 10.sp, fontWeight = FontWeight.Black)
+                }
             }
-            if (games.isEmpty()) {
-                Text("Belum ada game terdeteksi. Periksa izin visibilitas aplikasi.", color = MutedText, fontSize = 11.sp)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconButton(onClick = { showGamePicker = true }, modifier = Modifier.size(34.dp)) {
+                    Icon(Icons.Default.Add, contentDescription = "Tambah game", tint = AccentGreen)
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("GAME PREVIEW", color = PrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("Pilih game yang ingin ditampilkan di sini", color = MutedText, fontSize = 9.sp)
+                }
+            }
+            if (selectedGames.isEmpty()) {
+                Box(
+                    Modifier.fillMaxWidth().height(112.dp).clip(RoundedCornerShape(14.dp))
+                        .background(ElevatedSurface).border(1.dp, BorderColor, RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        Icon(Icons.Default.Gamepad, null, tint = MutedText, modifier = Modifier.size(25.dp))
+                        Text("0 GAME", color = PrimaryWhite, fontSize = 12.sp, fontWeight = FontWeight.Black)
+                        Text("Tekan + atau Game Space untuk menambahkan", color = MutedText, fontSize = 9.sp)
+                    }
+                }
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(end = 4.dp)) {
-                    items(games, key = { it.packageName }) { game ->
-                        Column(Modifier.width(148.dp).clip(RoundedCornerShape(14.dp)).background(ElevatedSurface).clickable { onLaunchGame(game.packageName) }.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(selectedGames, key = { it.packageName }) { game ->
+                        Column(
+                            Modifier.width(148.dp).clip(RoundedCornerShape(14.dp)).background(ElevatedSurface)
+                                .clickable { onLaunchGame(game.packageName) }.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             Icon(Icons.Default.Gamepad, null, tint = AccentGreen, modifier = Modifier.size(25.dp))
                             Text(game.appName, color = PrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, minLines = 2)
                             Text("TAP TO PLAY", color = AccentGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
@@ -227,6 +268,43 @@ fun GameSpaceScreen(
                     }
                 }
             }
+        }
+
+        if (showGamePicker) {
+            AlertDialog(
+                onDismissRequest = { showGamePicker = false },
+                containerColor = CardBg,
+                title = { Text("Pilih Game", color = PrimaryWhite, fontWeight = FontWeight.Black) },
+                text = {
+                    if (games.isEmpty()) {
+                        Text("Belum ada game yang terdeteksi di perangkat.", color = MutedText, fontSize = 12.sp)
+                    } else {
+                        Column(Modifier.fillMaxWidth().height(320.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            games.forEach { game ->
+                                val selected = game.packageName in selectedGamePackages
+                                Row(
+                                    Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                                        .background(if (selected) AccentGreen.copy(alpha = 0.12f) else ElevatedSurface)
+                                        .clickable {
+                                            selectedGamePackages = if (selected) selectedGamePackages - game.packageName else selectedGamePackages + game.packageName
+                                        }.padding(11.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(if (selected) Icons.Default.Check else Icons.Default.Gamepad, null, tint = if (selected) AccentGreen else MutedText)
+                                    Text(game.appName, color = PrimaryWhite, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                                    Text(if (selected) "DIPILIH" else "TAMBAH", color = if (selected) AccentGreen else MutedText, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showGamePicker = false }) {
+                        Text("SELESAI", color = AccentGreen, fontWeight = FontWeight.Bold)
+                    }
+                }
+            )
         }
 
         Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(18.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
