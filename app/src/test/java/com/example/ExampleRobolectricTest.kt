@@ -23,7 +23,6 @@ import com.example.core.system.overlay.EdgeSide
 import com.example.core.system.overlay.FloatingEdgeHandle
 import com.example.core.system.overlay.FloatingOverlayService
 import com.example.core.system.overlay.RightEdgeFloatingHandle
-import com.example.core.system.sensitivity.InputCompatibilityLayer
 import com.example.core.system.shizuku.ShizukuClient
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -74,28 +73,18 @@ class ExampleRobolectricTest {
     }
 
     @Test
-    fun `inputCompatibilityLayer inspects android APIs honestly without claiming game injection`() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val report = InputCompatibilityLayer.inspect(context, null)
-        assertTrue(report.officialGameApiStatus.contains("Tidak Tersedia"))
-        assertTrue(report.honestExplanation.contains("tidak disuntikkan"))
-    }
-
-    @Test
-    fun `gameProfileRepository isolates per-game overlay side sensitivity and presets cleanly`() = runBlocking {
+    fun `gameProfileRepository isolates per-game overlay settings cleanly`() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java)
             .allowMainThreadQueries()
             .build()
         try {
-            val repo = GameProfileRepository(db.gameProfileDao(), db.sensitivityPresetDao())
+            val repo = GameProfileRepository(db.gameProfileDao())
 
             // Free Fire uses Right Edge
             repo.setBoosterEnabled("com.dts.freefireth", "Free Fire", true)
             repo.updateProfile("com.dts.freefireth", "Free Fire") {
                 it.copy(
-                    sensitivityX = 20,
-                    sensitivityY = 24,
                     overlaySide = "RIGHT",
                     handleSizeDp = 90f,
                     handleOpacity = 0.75f,
@@ -110,20 +99,10 @@ class ExampleRobolectricTest {
             repo.setBoosterEnabled("com.dts.freefiremax", "Free Fire MAX", true)
             repo.updateProfile("com.dts.freefiremax", "Free Fire MAX") {
                 it.copy(
-                    sensitivityX = 12,
-                    sensitivityY = 14,
                     overlaySide = "LEFT",
                     handleSizeDp = 64f
                 )
             }
-
-            // Save & load named sensitivity preset
-            val presetId = repo.saveSensitivityPreset("Headshot Calibration", 18, 22, "com.dts.freefireth")
-            assertNotNull(presetId)
-            val savedPresets = repo.sensitivityPresets!!.first()
-            assertEquals(1, savedPresets.size)
-            assertEquals(18, savedPresets[0].sensitivityX)
-            assertEquals(22, savedPresets[0].sensitivityY)
 
             val ff = db.gameProfileDao().getProfile("com.dts.freefireth")!!
             val ffMax = db.gameProfileDao().getProfile("com.dts.freefiremax")!!
@@ -131,17 +110,14 @@ class ExampleRobolectricTest {
             assertEquals(90f, ff.handleSizeDp)
             assertEquals(0.75f, ff.handleOpacity)
             assertEquals(500L, ff.longPressDurationMs)
-            assertEquals(20, ff.sensitivityX)
             assertFalse(ff.dynamicIslandEnabled)
             assertTrue(ff.isHandleHidden)
 
             assertEquals("LEFT", ffMax.overlaySide)
             assertEquals(64f, ffMax.handleSizeDp)
-            assertEquals(12, ffMax.sensitivityX)
             assertTrue(ffMax.dynamicIslandEnabled)
 
             val resetFf = repo.resetProfile("com.dts.freefireth")!!
-            assertEquals(1, resetFf.sensitivityX)
             assertEquals("RIGHT", resetFf.overlaySide)
             assertEquals("", resetFf.musicUrl)
             assertTrue(resetFf.boosterEnabled)
