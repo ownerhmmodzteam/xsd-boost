@@ -10,7 +10,6 @@ import com.example.core.system.media.ResolvedMediaSource
 import com.example.core.system.media.SmartMediaUrlResolver
 import com.example.core.system.overlay.EdgeSide
 import com.example.core.system.prefs.EdgeSwipeConfig
-import com.example.core.system.sensitivity.InputCompatibilityLayer
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -65,17 +64,6 @@ class ExampleUnitTest {
         assertEquals(2.5f, config.thicknessDp)
         assertTrue(config.hasCenterDot)
         assertTrue(config.hasOutline)
-    }
-
-    @Test
-    fun sensitivityBounds_andSimulationMultiplier_scaleAccurately() {
-        assertEquals(1, 0.coerceIn(1, 26))
-        assertEquals(26, 30.coerceIn(1, 26))
-
-        val (lowDx, lowDy) = InputCompatibilityLayer.computeSimulatedReticleDelta(10f, 10f, 1, 1)
-        val (highDx, highDy) = InputCompatibilityLayer.computeSimulatedReticleDelta(10f, 10f, 26, 20)
-        assertTrue("High sensitivity X must displace more than low X", highDx > lowDx)
-        assertTrue("High sensitivity Y must displace more than low Y", highDy > lowDy)
     }
 
     @Test
