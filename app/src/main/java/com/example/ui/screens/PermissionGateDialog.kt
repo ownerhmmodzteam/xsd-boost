@@ -48,7 +48,12 @@ fun PermissionGateDialog() {
     var refresh by remember { mutableIntStateOf(0) }
     var dismissedThisSession by remember { mutableStateOf(false) }
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) refresh++ }
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refresh++
+                dismissedThisSession = false
+            }
+        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
