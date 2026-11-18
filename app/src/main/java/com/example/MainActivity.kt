@@ -1,11 +1,6 @@
 package com.example
 
 import android.os.Bundle
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -26,6 +21,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +41,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import android.content.pm.ActivityInfo
+import android.view.View
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,6 +52,8 @@ import com.example.ui.components.BottomNavTab
 import com.example.ui.components.DynamicIsland
 import com.example.ui.components.FloatingBottomNavigation
 import com.example.ui.screens.GameSpaceScreen
+import com.example.ui.screens.HomeScreen
+import com.example.ui.screens.PermissionGateDialog
 import com.example.ui.screens.DeveloperProfileScreen
 import com.example.ui.screens.MonitorScreen
 import com.example.ui.screens.PermissionsCenterScreen
@@ -76,10 +76,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val audioPermission = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
-        if (ContextCompat.checkSelfPermission(this, audioPermission) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(audioPermission), 4207)
-        }
         setContent {
             MyApplicationTheme {
                 MainAppContainer(viewModel = viewModel)
@@ -193,7 +189,18 @@ fun MainAppContainer(viewModel: MainViewModel) {
     }
     var selectedTab by remember { mutableStateOf(BottomNavTab.HOME) }
     var subScreen by remember { mutableStateOf(AppSubScreen.MAIN_NAV) }
+    var isGameSpaceOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
+    val originalOrientation = remember { activity?.requestedOrientation ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    SideEffect {
+        activity?.requestedOrientation = if (isGameSpaceOpen) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else originalOrientation
+        activity?.window?.decorView?.systemUiVisibility = if (isGameSpaceOpen) {
+            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        } else {
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+        }
+    }
 
     val stats by viewModel.systemStats.collectAsState()
     val fps by viewModel.currentFps.collectAsState()
@@ -227,10 +234,24 @@ fun MainAppContainer(viewModel: MainViewModel) {
     val musicState by viewModel.musicPlayer.state.collectAsState()
     val musicHistory by viewModel.musicHistory.collectAsState()
 
-    BackHandler(enabled = subScreen != AppSubScreen.MAIN_NAV) {
+    BackHandler(enabled = isGameSpaceOpen) { isGameSpaceOpen = false }
+    BackHandler(enabled = !isGameSpaceOpen && subScreen != AppSubScreen.MAIN_NAV) {
         subScreen = AppSubScreen.MAIN_NAV
     }
 
+    if (isGameSpaceOpen) {
+        GameSpaceScreen(
+            stats = stats,
+            fps = fps,
+            games = games,
+            musicState = musicState,
+            isRogOverlayActive = isOverlayActive,
+            onLaunchGame = { pkg -> viewModel.launchGame(pkg) },
+            onRunSmartBoost = { viewModel.runSmartBoost() },
+            onToggleRogMonitor = { enabled -> viewModel.toggleOverlay(enabled) },
+            onExit = { isGameSpaceOpen = false }
+        )
+    } else {
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -292,11 +313,13 @@ fun MainAppContainer(viewModel: MainViewModel) {
                         AppSubScreen.MAIN_NAV -> {
                             when (selectedTab) {
                                 BottomNavTab.HOME -> {
-                                    GameSpaceScreen(stats = stats, fps = fps, games = games, musicState = musicState,
-                                        isRogOverlayActive = isOverlayActive,
-                                        onLaunchGame = { pkg -> viewModel.launchGame(pkg) },
+                                    HomeScreen(
+                                        stats = stats,
+                                        fps = fps,
+                                        onOpenGameSpace = { isGameSpaceOpen = true },
                                         onRunSmartBoost = { viewModel.runSmartBoost() },
-                                        onToggleRogMonitor = { enabled -> viewModel.toggleOverlay(enabled) })
+                                        isBoosting = isBoosting
+                                    )
                                 }
                                 BottomNavTab.TOOLS -> {
                                     val shizukuStatus by viewModel.shizukuStatus.collectAsState()
@@ -368,4 +391,6 @@ fun MainAppContainer(viewModel: MainViewModel) {
             }
         }
     }
+    }
+    PermissionGateDialog()
 }
