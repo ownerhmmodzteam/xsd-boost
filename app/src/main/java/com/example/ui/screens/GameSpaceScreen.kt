@@ -1,56 +1,27 @@
 package com.example.ui.screens
 
+import android.content.Context
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Gamepad
-import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Thermostat
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,14 +41,9 @@ import androidx.media3.ui.PlayerView
 import com.example.core.system.games.GameApp
 import com.example.core.system.hardware.SystemStats
 import com.example.core.system.media.MusicPlayerState
-import com.example.ui.theme.AccentGreen
-import com.example.ui.theme.BgPrimary
-import com.example.ui.theme.BorderColor
-import com.example.ui.theme.CardBg
-import com.example.ui.theme.ElevatedSurface
-import com.example.ui.theme.MutedText
-import com.example.ui.theme.PrimaryWhite
-import com.example.ui.theme.SecondaryWhite
+
+private val GameSpaceGreen = Color(0xFF39F58A)
+private val GameSpaceDark = Color(0xFF080D0B)
 
 @Composable
 fun GameSpaceScreen(
@@ -89,33 +55,28 @@ fun GameSpaceScreen(
     onLaunchGame: (String) -> Unit,
     onRunSmartBoost: () -> Unit,
     onToggleRogMonitor: (Boolean) -> Unit,
+    onExit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val bundledVideos = remember {
-        context.assets.list("game_backgrounds")?.filter { it.endsWith(".mp4", true) }?.sorted().orEmpty()
-    }
-    var selectedBundledIndex by remember { mutableIntStateOf(0) }
-    var selectedExternalVideo by remember { mutableStateOf<Uri?>(null) }
-    var videoVolume by remember { mutableStateOf(0f) }
+    val animationFiles = remember { (1..5).map { "background_$it.mp4" } }
+    val bundledFiles = remember { context.assets.list("game_backgrounds")?.toSet().orEmpty() }
+    val prefs = remember { context.getSharedPreferences("xsd_game_space", Context.MODE_PRIVATE) }
+    var selectedAnimation by rememberSaveable { mutableIntStateOf(prefs.getInt("selected_animation", 1).coerceIn(1, 5)) }
+    var selectedGamePackages by rememberSaveable { mutableStateOf(emptySet<String>()) }
     var showGamePicker by remember { mutableStateOf(false) }
-    var selectedGamePackages by remember { mutableStateOf<Set<String>>(emptySet()) }
     val selectedGames = remember(games, selectedGamePackages) { games.filter { it.packageName in selectedGamePackages } }
-    val videoPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            try { context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION) } catch (_: Exception) {}
-            selectedExternalVideo = uri
-        }
-    }
     val player = remember(context) { ExoPlayer.Builder(context).build() }
+
     DisposableEffect(player) {
         player.repeatMode = Player.REPEAT_MODE_ONE
-        onDispose { player.clearVideoSurface(); player.release() }
+        onDispose { player.stop(); player.clearVideoSurface(); player.release() }
     }
-    LaunchedEffect(selectedBundledIndex, selectedExternalVideo, bundledVideos) {
-        val uri = selectedExternalVideo ?: bundledVideos.getOrNull(selectedBundledIndex)?.let { Uri.parse("asset:///game_backgrounds/$it") }
-        if (uri != null) {
-            player.setMediaItem(MediaItem.fromUri(uri))
+    LaunchedEffect(selectedAnimation) {
+        prefs.edit().putInt("selected_animation", selectedAnimation).apply()
+        val file = animationFiles[selectedAnimation - 1]
+        if (file in bundledFiles) {
+            player.setMediaItem(MediaItem.fromUri(Uri.parse("asset:///game_backgrounds/$file")))
             player.prepare()
             player.playWhenReady = true
         } else {
@@ -123,216 +84,119 @@ fun GameSpaceScreen(
             player.clearMediaItems()
         }
     }
-    LaunchedEffect(videoVolume) { player.volume = videoVolume }
+    BackHandler(onBack = onExit)
 
-    Column(
-        modifier = modifier.fillMaxSize().background(BgPrimary).verticalScroll(rememberScrollState()).padding(bottom = 108.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Box(
-            modifier = Modifier.fillMaxWidth().height(232.dp).clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFF101713)).border(1.dp, BorderColor, RoundedCornerShape(24.dp))
-        ) {
-            AndroidView(
-                factory = { ctx ->
-                    val exo = player
-                    PlayerView(ctx).apply {
-                        useController = false
-                        resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                        setShutterBackgroundColor(android.graphics.Color.rgb(12, 17, 15))
-                        this.player = exo
-                    }
-                },
-                update = { view -> if (view.player !== player) view.player = player },
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color(0xAA050807), Color(0x33050807), Color(0xDD050807)))))
-            Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.size(8.dp).background(AccentGreen, CircleShape))
-                    Text("XSD BOOST  /  GAME SPACE", color = PrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.4.sp)
+    BoxWithConstraints(modifier.fillMaxSize().background(GameSpaceDark)) {
+        val exoPlayer = player
+        AndroidView(
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    useController = false
+                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    setShutterBackgroundColor(android.graphics.Color.rgb(8, 13, 11))
+                    player = exoPlayer
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("YOUR GAME. YOUR SPACE.", color = PrimaryWhite, fontSize = 23.sp, fontWeight = FontWeight.Black)
-                    Text(
-                        if (selectedExternalVideo != null) "CUSTOM VIDEO BACKGROUND"
-                        else if (bundledVideos.isEmpty()) "ADD MP4 FILES TO game_backgrounds/"
-                        else "BACKGROUND ${selectedBundledIndex + 1} / ${bundledVideos.size}",
-                        color = SecondaryWhite, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp
-                    )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Button(
-                            onClick = { videoPicker.launch(arrayOf("video/mp4", "video/*")) },
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryWhite, contentColor = BgPrimary),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp)
-                        ) {
-                            Icon(Icons.Default.Add, null, modifier = Modifier.size(15.dp))
-                            Spacer(Modifier.width(5.dp))
-                            Text("CHANGE VIDEO", fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        }
-                        TextButton(onClick = { selectedExternalVideo = null; selectedBundledIndex = 0 }, enabled = bundledVideos.isNotEmpty()) {
-                            Text("RESET", color = PrimaryWhite, fontSize = 9.sp)
-                        }
-                    }
-                }
-            }
-        }
-
-        if (bundledVideos.isNotEmpty()) {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                bundledVideos.forEachIndexed { index, name ->
-                    Box(Modifier.clip(RoundedCornerShape(10.dp))
-                        .background(if (selectedExternalVideo == null && selectedBundledIndex == index) AccentGreen else CardBg)
-                        .clickable { selectedExternalVideo = null; selectedBundledIndex = index }
-                        .padding(horizontal = 12.dp, vertical = 8.dp)) {
-                        Text(name, color = if (selectedExternalVideo == null && selectedBundledIndex == index) BgPrimary else SecondaryWhite, fontSize = 10.sp, maxLines = 1)
-                    }
-                }
-            }
-        }
-
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(18.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("VIDEO AUDIO", color = PrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text("${(videoVolume * 100).toInt()}%", color = AccentGreen, fontSize = 10.sp)
-            }
-            Slider(value = videoVolume, onValueChange = { videoVolume = it }, valueRange = 0f..1f, colors = SliderDefaults.colors(thumbColor = AccentGreen, activeTrackColor = AccentGreen))
-            Text("Atur suara video atau mute agar tidak bertabrakan dengan musik Dynamic Island.", color = MutedText, fontSize = 10.sp)
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            MetricCard("CPU", stats.rawCpuUsagePercent?.let { "${it.toInt()}%" } ?: "N/A", Icons.Default.Speed, Modifier.weight(1f))
-            MetricCard("RAM", "${stats.ramUsagePercent.toInt()}%", Icons.Default.Memory, Modifier.weight(1f))
-            MetricCard("TEMP", stats.effectiveTempCelsius?.let { "${it.toInt()}°C" } ?: "N/A", Icons.Default.Thermostat, Modifier.weight(1f))
-            MetricCard("FPS EST.", "${fps.toInt()}", Icons.Default.Bolt, Modifier.weight(1f))
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            ActionCard("SMART BOOST", "Analisis memori dan pembersihan cache yang diizinkan Android", Icons.Default.Bolt, Modifier.weight(1f), onRunSmartBoost)
-            ActionCard(if (isRogOverlayActive) "ROG MONITOR ON" else "FLOATING ROG MONITOR", "Tampilkan metrik perangkat di atas game", Icons.Default.Speed, Modifier.weight(1f)) { onToggleRogMonitor(!isRogOverlayActive) }
-        }
-
+            },
+            update = { if (it.player !== exoPlayer) it.player = exoPlayer },
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
+            listOf(Color(0xAA040A07), Color(0x22040A07), Color(0xDD040A07))
+        )))
         Column(
-            Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
-                .background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(18.dp)).padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text("GAME SPACE", color = PrimaryWhite, fontSize = 13.sp, fontWeight = FontWeight.Black)
-                    Text("${selectedGames.size} games selected", color = MutedText, fontSize = 10.sp)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onExit, modifier = Modifier.size(42.dp).background(Color(0x660B1710), CircleShape)) {
+                    Icon(Icons.Default.ArrowBack, "Keluar Game Space", tint = Color.White)
                 }
-                Button(
-                    onClick = { showGamePicker = true },
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentGreen, contentColor = BgPrimary),
-                    contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp)
-                ) {
-                    Icon(Icons.Default.Gamepad, null, modifier = Modifier.size(15.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("GAME SPACE", fontSize = 10.sp, fontWeight = FontWeight.Black)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("XSD BOOST", color = Color.White, fontWeight = FontWeight.Black, fontSize = 17.sp, letterSpacing = 2.sp)
+                    Text("GAME SPACE", color = GameSpaceGreen, fontWeight = FontWeight.Bold, fontSize = 9.sp, letterSpacing = 2.2.sp)
                 }
+                Spacer(Modifier.weight(1f))
+                Text("CPU ${stats.rawCpuUsagePercent?.toInt() ?: 0}%   •   RAM ${stats.ramUsagePercent.toInt()}%   •   ${fps.toInt()} FPS",
+                    color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                IconButton(onClick = { showGamePicker = true }, modifier = Modifier.size(34.dp)) {
-                    Icon(Icons.Default.Add, contentDescription = "Tambah game", tint = AccentGreen)
-                }
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("GAME PREVIEW", color = PrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Text("Pilih game yang ingin ditampilkan di sini", color = MutedText, fontSize = 9.sp)
-                }
-            }
-            if (selectedGames.isEmpty()) {
-                Box(
-                    Modifier.fillMaxWidth().height(112.dp).clip(RoundedCornerShape(14.dp))
-                        .background(ElevatedSurface).border(1.dp, BorderColor, RoundedCornerShape(14.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Icon(Icons.Default.Gamepad, null, tint = MutedText, modifier = Modifier.size(25.dp))
-                        Text("0 GAME", color = PrimaryWhite, fontSize = 12.sp, fontWeight = FontWeight.Black)
-                        Text("Tekan + atau Game Space untuk menambahkan", color = MutedText, fontSize = 9.sp)
-                    }
-                }
-            } else {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(end = 4.dp)) {
-                    items(selectedGames, key = { it.packageName }) { game ->
-                        Column(
-                            Modifier.width(148.dp).clip(RoundedCornerShape(14.dp)).background(ElevatedSurface)
-                                .clickable { onLaunchGame(game.packageName) }.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(Icons.Default.Gamepad, null, tint = AccentGreen, modifier = Modifier.size(25.dp))
-                            Text(game.appName, color = PrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, minLines = 2)
-                            Text("TAP TO PLAY", color = AccentGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("CHANGE ANIMATION", color = Color.White, fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 1.6.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                        animationFiles.forEachIndexed { index, _ ->
+                            val number = index + 1
+                            Box(
+                                Modifier.size(width = 52.dp, height = 42.dp).clip(RoundedCornerShape(12.dp))
+                                    .background(if (selectedAnimation == number) GameSpaceGreen else Color(0xAA101A15))
+                                    .border(1.dp, if (selectedAnimation == number) GameSpaceGreen else Color(0x55FFFFFF), RoundedCornerShape(12.dp))
+                                    .clickable { selectedAnimation = number },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(number.toString().padStart(2, '0'), color = if (selectedAnimation == number) GameSpaceDark else Color.White,
+                                    fontSize = 13.sp, fontWeight = FontWeight.Black)
+                            }
                         }
                     }
-                }
-            }
-        }
-
-        if (showGamePicker) {
-            AlertDialog(
-                onDismissRequest = { showGamePicker = false },
-                containerColor = CardBg,
-                title = { Text("Pilih Game", color = PrimaryWhite, fontWeight = FontWeight.Black) },
-                text = {
-                    if (games.isEmpty()) {
-                        Text("Belum ada game yang terdeteksi di perangkat.", color = MutedText, fontSize = 12.sp)
-                    } else {
-                        Column(Modifier.fillMaxWidth().height(320.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            games.forEach { game ->
-                                val selected = game.packageName in selectedGamePackages
-                                Row(
-                                    Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
-                                        .background(if (selected) AccentGreen.copy(alpha = 0.12f) else ElevatedSurface)
-                                        .clickable {
-                                            selectedGamePackages = if (selected) selectedGamePackages - game.packageName else selectedGamePackages + game.packageName
-                                        }.padding(11.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Icon(if (selected) Icons.Default.Check else Icons.Default.Gamepad, null, tint = if (selected) AccentGreen else MutedText)
-                                    Text(game.appName, color = PrimaryWhite, fontSize = 12.sp, modifier = Modifier.weight(1f))
-                                    Text(if (selected) "DIPILIH" else "TAMBAH", color = if (selected) AccentGreen else MutedText, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("MY GAMES", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.4.sp)
+                        Text("${selectedGames.size} SELECTED", color = GameSpaceGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                        IconButton(onClick = { showGamePicker = true }, modifier = Modifier.size(30.dp).background(Color(0xAA101A15), CircleShape)) {
+                            Icon(Icons.Default.Add, "Tambah game", tint = GameSpaceGreen, modifier = Modifier.size(18.dp))
+                        }
+                        if (selectedGames.isNotEmpty()) {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(selectedGames, key = { it.packageName }) { game ->
+                                    TextButton(onClick = { onLaunchGame(game.packageName) }, colors = ButtonDefaults.textButtonColors(contentColor = Color.White)) {
+                                        Icon(Icons.Default.Gamepad, null, tint = GameSpaceGreen, modifier = Modifier.size(15.dp))
+                                        Spacer(Modifier.width(5.dp))
+                                        Text(game.appName, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 10.sp)
+                                    }
                                 }
                             }
                         }
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showGamePicker = false }) {
-                        Text("SELESAI", color = AccentGreen, fontWeight = FontWeight.Bold)
+                }
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onRunSmartBoost, colors = ButtonDefaults.buttonColors(containerColor = GameSpaceGreen, contentColor = GameSpaceDark),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)) {
+                        Icon(Icons.Default.Bolt, null, modifier = Modifier.size(15.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("SMART BOOST", fontSize = 9.sp, fontWeight = FontWeight.Black)
+                    }
+                    OutlinedButton(onClick = { onToggleRogMonitor(!isRogOverlayActive) },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp)) {
+                        Icon(Icons.Default.Speed, null, tint = GameSpaceGreen, modifier = Modifier.size(15.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text(if (isRogOverlayActive) "MONITOR ON" else "ROG MONITOR", color = Color.White, fontSize = 9.sp)
                     }
                 }
-            )
-        }
-
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(18.dp)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.MusicNote, null, tint = AccentGreen)
-                Spacer(Modifier.width(7.dp))
-                Text("DYNAMIC ISLAND MUSIC", color = PrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
-            Text(if (musicState.currentTitle.isBlank()) "Belum ada musik diputar" else musicState.currentTitle, color = SecondaryWhite, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(if (musicState.isPlaying) "PLAYING" else "READY", color = if (musicState.isPlaying) AccentGreen else MutedText, fontSize = 9.sp)
         }
     }
-}
 
-@Composable
-private fun MetricCard(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier) {
-    Column(modifier.clip(RoundedCornerShape(14.dp)).background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(14.dp)).padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Icon(icon, null, tint = AccentGreen, modifier = Modifier.size(16.dp))
-        Text(value, color = PrimaryWhite, fontSize = 16.sp, fontWeight = FontWeight.Black)
-        Text(label, color = MutedText, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-private fun ActionCard(title: String, description: String, icon: androidx.compose.ui.graphics.vector.ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Column(modifier.clip(RoundedCornerShape(16.dp)).background(ElevatedSurface).border(1.dp, BorderColor, RoundedCornerShape(16.dp)).clickable(onClick = onClick).padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Icon(icon, null, tint = AccentGreen, modifier = Modifier.size(19.dp))
-        Text(title, color = PrimaryWhite, fontSize = 10.sp, fontWeight = FontWeight.Black)
-        Text(description, color = MutedText, fontSize = 9.sp, lineHeight = 13.sp)
+    if (showGamePicker) {
+        AlertDialog(
+            onDismissRequest = { showGamePicker = false },
+            containerColor = Color(0xFF151C18),
+            title = { Text("Pilih Game", color = Color.White, fontWeight = FontWeight.Black) },
+            text = {
+                if (games.isEmpty()) Text("Belum ada game yang terdeteksi.", color = Color.LightGray)
+                else LazyColumn(Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
+                    items(games, key = { it.packageName }) { game ->
+                        val chosen = game.packageName in selectedGamePackages
+                        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable {
+                            selectedGamePackages = if (chosen) selectedGamePackages - game.packageName else selectedGamePackages + game.packageName
+                        }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(if (chosen) Icons.Default.Check else Icons.Default.Gamepad, null, tint = if (chosen) GameSpaceGreen else Color.LightGray)
+                            Spacer(Modifier.width(10.dp))
+                            Text(game.appName, color = Color.White, modifier = Modifier.weight(1f))
+                            Text(if (chosen) "SELECTED" else "ADD", color = GameSpaceGreen, fontSize = 9.sp)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showGamePicker = false }) { Text("DONE", color = GameSpaceGreen) } }
+        )
     }
 }
