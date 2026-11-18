@@ -59,7 +59,7 @@ fun GameSpaceScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val animationFiles = remember { (1..5).map { index -> "background_${'
+    val animationFiles = remember { (1..5).map { index -> "background_" + index.toString().padStart(2, '0') + ".mp4" } }
     val bundledFiles = remember { context.assets.list("game_backgrounds")?.toSet().orEmpty() }
     val prefs = remember { context.getSharedPreferences("xsd_game_space", Context.MODE_PRIVATE) }
     var selectedAnimation by rememberSaveable { mutableIntStateOf(prefs.getInt("selected_animation", 1).coerceIn(1, 5)) }
