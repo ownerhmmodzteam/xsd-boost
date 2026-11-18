@@ -190,7 +190,6 @@ fun GameSpaceScreen(
                 }
             }
         }
-    }
 
         if (showMonitorPanel) {
             Surface(
@@ -257,6 +256,8 @@ fun GameSpaceScreen(
                 }
             }
         }
+    }
+
     if (showGamePicker) {
         AlertDialog(
             onDismissRequest = { showGamePicker = false },
