@@ -94,7 +94,7 @@ fun GameSpaceScreen(
                     useController = false
                     resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                     setShutterBackgroundColor(android.graphics.Color.rgb(8, 13, 11))
-                    player = exoPlayer
+                    this.player = exoPlayer
                 }
             },
             update = { if (it.player !== exoPlayer) it.player = exoPlayer },
