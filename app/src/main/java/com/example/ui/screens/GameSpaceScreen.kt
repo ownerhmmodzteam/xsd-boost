@@ -244,9 +244,9 @@ fun GameSpaceScreen(
         ) {
             Icon(Icons.Default.Speed, contentDescription = "Monitor floating", tint = if (showMonitorPanel) GameSpaceDark else GameSpaceGreen)
         }
-        if (showEntrance) {
-            val entranceAlpha by animateFloatAsState(targetValue = if (showEntrance) 1f else 0f, animationSpec = tween(550, easing = FastOutSlowInEasing), label = "gs_intro_alpha")
-            val entranceScale by animateFloatAsState(targetValue = if (showEntrance) 1f else 1.15f, animationSpec = tween(650, easing = FastOutSlowInEasing), label = "gs_intro_scale")
+        val entranceAlpha by animateFloatAsState(targetValue = if (showEntrance) 1f else 0f, animationSpec = tween(550, easing = FastOutSlowInEasing), label = "gs_intro_alpha")
+        val entranceScale by animateFloatAsState(targetValue = if (showEntrance) 1f else 1.15f, animationSpec = tween(650, easing = FastOutSlowInEasing), label = "gs_intro_scale")
+        if (entranceAlpha > 0.01f) {
             Box(Modifier.fillMaxSize().alpha(entranceAlpha).scale(entranceScale).background(Color(0xFF050907)), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     Text("XSD BOOST", color = GameSpaceGreen, fontSize = 24.sp, fontWeight = FontWeight.Black, letterSpacing = 4.sp)
