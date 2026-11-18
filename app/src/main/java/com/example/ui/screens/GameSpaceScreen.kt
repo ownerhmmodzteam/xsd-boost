@@ -270,8 +270,15 @@ fun GameSpaceScreen(
                         Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).clickable {
                             selectedGamePackages = if (chosen) selectedGamePackages - game.packageName else selectedGamePackages + game.packageName
                         }.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(if (chosen) Icons.Default.Check else Icons.Default.Gamepad, null, tint = if (chosen) GameSpaceGreen else Color.LightGray)
+                            AndroidView(factory = { ctx ->
+                                ImageView(ctx).apply {
+                                    try { setImageDrawable(ctx.packageManager.getApplicationIcon(game.packageName)) }
+                                    catch (_: Exception) { setImageDrawable(null) }
+                                    scaleType = ImageView.ScaleType.FIT_CENTER
+                                }
+                            }, modifier = Modifier.size(26.dp))
                             Spacer(Modifier.width(10.dp))
+                            if (chosen) Icon(Icons.Default.Check, null, tint = GameSpaceGreen, modifier = Modifier.size(15.dp))
                             Text(game.appName, color = Color.White, modifier = Modifier.weight(1f))
                             Text(if (chosen) "SELECTED" else "ADD", color = GameSpaceGreen, fontSize = 9.sp)
                         }
