@@ -114,79 +114,86 @@ fun GameSpaceScreen(
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
             listOf(Color(0xAA040A07), Color(0x22040A07), Color(0xDD040A07))
         )))
-        Column(
-            Modifier.fillMaxSize().padding(horizontal = 26.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onExit, modifier = Modifier.size(42.dp).background(Color(0x660B1710), CircleShape)) {
-                    Icon(Icons.Default.ArrowBack, "Keluar Game Space", tint = Color.White)
-                }
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text("XSD BOOST", color = Color.White, fontWeight = FontWeight.Black, fontSize = 17.sp, letterSpacing = 2.sp)
-                    Text("GAME SPACE", color = GameSpaceGreen, fontWeight = FontWeight.Bold, fontSize = 9.sp, letterSpacing = 2.2.sp)
-                }
-                Spacer(Modifier.weight(1f))
-                Text("CPU ${stats.rawCpuUsagePercent?.toInt() ?: 0}%   •   RAM ${stats.ramUsagePercent.toInt()}%   •   ${fps.toInt()} FPS",
-                    color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("CHANGE ANIMATION", color = Color.White, fontWeight = FontWeight.Black, fontSize = 11.sp, letterSpacing = 1.6.sp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                        animationFiles.forEachIndexed { index, _ ->
-                            val number = index + 1
-                            Box(
-                                Modifier.size(width = 52.dp, height = 42.dp).clip(RoundedCornerShape(12.dp))
-                                    .background(if (selectedAnimation == number) GameSpaceGreen else Color(0xAA101A15))
-                                    .border(1.dp, if (selectedAnimation == number) GameSpaceGreen else Color(0x55FFFFFF), RoundedCornerShape(12.dp))
-                                    .clickable { selectedAnimation = number },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(number.toString().padStart(2, '0'), color = if (selectedAnimation == number) GameSpaceDark else Color.White,
-                                    fontSize = 13.sp, fontWeight = FontWeight.Black)
-                            }
+        Row(Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            // LEFT: compact game library
+            Surface(Modifier.width(210.dp).fillMaxHeight(), color = Color(0xAA0D1511), shape = RoundedCornerShape(22.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x2239F58A)) ) {
+                Column(Modifier.padding(13.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("MY GAMES", color = GameSpaceGreen, fontWeight = FontWeight.Black, fontSize = 12.sp, letterSpacing = 1.2.sp)
+                            Text("${selectedGames.size} games selected", color = Color.LightGray, fontSize = 9.sp)
                         }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("MY GAMES", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.4.sp)
-                        Text("${selectedGames.size} SELECTED", color = GameSpaceGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                        IconButton(onClick = { showGamePicker = true }, modifier = Modifier.size(30.dp).background(Color(0xAA101A15), CircleShape)) {
+                        IconButton(onClick = { showGamePicker = true }, modifier = Modifier.size(34.dp).background(Color(0xFF20382A), CircleShape)) {
                             Icon(Icons.Default.Add, "Tambah game", tint = GameSpaceGreen, modifier = Modifier.size(18.dp))
                         }
-                        if (selectedGames.isNotEmpty()) {
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                items(selectedGames, key = { it.packageName }) { game ->
-                                    TextButton(onClick = { onLaunchGame(game.packageName) }, colors = ButtonDefaults.textButtonColors(contentColor = Color.White)) {
-                                        AndroidView(factory = { ctx ->
-                                        ImageView(ctx).apply {
-                                            try { setImageDrawable(ctx.packageManager.getApplicationIcon(game.packageName)) }
-                                            catch (_: Exception) { setImageDrawable(null) }
-                                            scaleType = ImageView.ScaleType.FIT_CENTER
-                                        }
-                                    }, modifier = Modifier.size(18.dp))
-                                        Spacer(Modifier.width(5.dp))
-                                        Text(game.appName, maxLines = 1, overflow = TextOverflow.Ellipsis, fontSize = 10.sp)
-                                    }
+                    }
+                    if (selectedGames.isEmpty()) {
+                        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Icon(Icons.Default.Gamepad, null, tint = Color(0xFF65816D), modifier = Modifier.size(30.dp))
+                                Text("Add your games", color = Color.LightGray, fontSize = 10.sp)
+                                Text("Tap + to select", color = Color.Gray, fontSize = 9.sp)
+                            }
+                        }
+                    } else {
+                        LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(selectedGames, key = { it.packageName }) { game ->
+                                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0x66233229)).clickable { onLaunchGame(game.packageName) }.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    AndroidView(factory = { ctx -> ImageView(ctx).apply { try { setImageDrawable(ctx.packageManager.getApplicationIcon(game.packageName)) } catch (_: Exception) {}; scaleType = ImageView.ScaleType.FIT_CENTER } }, modifier = Modifier.size(30.dp))
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(game.appName, color = Color.White, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                                 }
                             }
                         }
                     }
+                    Text("BACKGROUND", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        animationFiles.forEachIndexed { index, _ ->
+                            val num = index + 1
+                            Box(Modifier.weight(1f).height(25.dp).clip(RoundedCornerShape(7.dp)).background(if (selectedAnimation == num) GameSpaceGreen else Color(0xFF202A23)).clickable { selectedAnimation = num }, contentAlignment = Alignment.Center) {
+                                Text(num.toString(), color = if (selectedAnimation == num) GameSpaceDark else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
-                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onRunSmartBoost, colors = ButtonDefaults.buttonColors(containerColor = GameSpaceGreen, contentColor = GameSpaceDark),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)) {
-                        Icon(Icons.Default.Bolt, null, modifier = Modifier.size(15.dp))
-                        Spacer(Modifier.width(5.dp))
-                        Text("SMART BOOST", fontSize = 9.sp, fontWeight = FontWeight.Black)
+            }
+            // CENTER: identity + live device stats
+            Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.Center, verticalArrangement = Arrangement.Center) {
+                Text("XSD", color = GameSpaceGreen, fontSize = 36.sp, fontWeight = FontWeight.Black, letterSpacing = 6.sp)
+                Text("BOOST", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 5.sp)
+                Spacer(Modifier.height(5.dp))
+                Text("GAMING COCKPIT", color = Color(0xFFB8C8BC), fontSize = 9.sp, letterSpacing = 2.sp)
+                Spacer(Modifier.height(22.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    MonitorTile("CPU", "${stats.rawCpuUsagePercent?.toInt() ?: 0}%")
+                    MonitorTile("RAM", "${stats.ramUsagePercent.toInt()}%")
+                    MonitorTile("FPS", fps.toInt().toString())
+                }
+                Spacer(Modifier.height(12.dp))
+                Text("SYSTEM READY", color = GameSpaceGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+            }
+            // RIGHT: compact quick controls
+            Surface(Modifier.width(170.dp).fillMaxHeight(), color = Color(0xAA0D1511), shape = RoundedCornerShape(22.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x2239F58A)) ) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("QUICK CONTROL", color = GameSpaceGreen, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                    Button(onClick = onRunSmartBoost, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = GameSpaceGreen, contentColor = GameSpaceDark), contentPadding = PaddingValues(8.dp)) {
+                        Icon(Icons.Default.Bolt, null, modifier = Modifier.size(15.dp)); Spacer(Modifier.width(5.dp)); Text("SMART BOOST", fontSize = 9.sp, fontWeight = FontWeight.Black)
                     }
-                    OutlinedButton(onClick = { onToggleRogMonitor(!isRogOverlayActive) },
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 7.dp)) {
-                        Icon(Icons.Default.Speed, null, tint = GameSpaceGreen, modifier = Modifier.size(15.dp))
-                        Spacer(Modifier.width(5.dp))
-                        Text(if (isRogOverlayActive) "MONITOR ON" else "ROG MONITOR", color = Color.White, fontSize = 9.sp)
+                    OutlinedButton(onClick = { onToggleRogMonitor(!isRogOverlayActive) }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(7.dp)) {
+                        Icon(Icons.Default.Speed, null, tint = GameSpaceGreen, modifier = Modifier.size(14.dp)); Spacer(Modifier.width(5.dp)); Text(if (isRogOverlayActive) "HUD ON" else "ROG HUD", color = Color.White, fontSize = 9.sp)
                     }
+                    OutlinedButton(onClick = { showMonitorPanel = !showMonitorPanel }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(7.dp)) {
+                        Icon(Icons.Default.Speed, null, tint = GameSpaceGreen, modifier = Modifier.size(14.dp)); Spacer(Modifier.width(5.dp)); Text("MONITOR", color = Color.White, fontSize = 9.sp)
+                    }
+                    OutlinedButton(onClick = { context.startActivity(Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)) }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(7.dp)) {
+                        Text("WI-FI", color = Color.White, fontSize = 9.sp)
+                    }
+                    OutlinedButton(onClick = { context.startActivity(Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS)) }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(7.dp)) {
+                        Text("DISPLAY", color = Color.White, fontSize = 9.sp)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    IconButton(onClick = onExit, modifier = Modifier.size(36.dp).background(Color(0xFF24352A), CircleShape)) { Icon(Icons.Default.ArrowBack, "Exit", tint = GameSpaceGreen) }
+                    Text("EXIT GAME SPACE", color = Color.Gray, fontSize = 8.sp)
                 }
             }
         }
