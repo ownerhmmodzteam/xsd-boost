@@ -158,7 +158,7 @@ fun GameSpaceScreen(
                 }
             }
             // CENTER: identity + live device stats
-            Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.Center, verticalArrangement = Arrangement.Center) {
+            Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Text("XSD", color = GameSpaceGreen, fontSize = 36.sp, fontWeight = FontWeight.Black, letterSpacing = 6.sp)
                 Text("BOOST", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Black, letterSpacing = 5.sp)
                 Spacer(Modifier.height(5.dp))
