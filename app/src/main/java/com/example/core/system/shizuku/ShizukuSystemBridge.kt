@@ -83,7 +83,4 @@ class ShizukuSystemBridge(
         return executePrivilegedCommand("pm trim-caches 4096M")
     }
 
-    suspend fun optimizeTouchSamplingRate(): String {
-        return executePrivilegedCommand("cmd display set-user-preferred-display-mode")
-    }
 }
