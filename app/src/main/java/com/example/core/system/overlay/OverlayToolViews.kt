@@ -695,6 +695,8 @@ fun OverlayMusicPlayerTool(
     islandPositionX: Int,
     islandPositionY: Int,
     onAdjustIslandPosition: (Int, Int) -> Unit,
+    isIslandExpanded: Boolean,
+    onToggleIslandExpanded: () -> Unit,
     history: List<MusicHistoryEntity>,
     onLoadUrl: (String) -> Unit,
     onPlay: () -> Unit,
@@ -1089,6 +1091,22 @@ fun OverlayMusicPlayerTool(
                     uncheckedTrackColor = ElevatedSurface
                 )
             )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                .background(CardBg).border(1.dp, BorderColor, RoundedCornerShape(10.dp))
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("UKURAN FLOATING MUSIC", color = PrimaryWhite, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text(if (isIslandExpanded) "Mode diperluas" else "Mode mini", color = MutedText, fontSize = 9.sp)
+            }
+            TextButton(onClick = onToggleIslandExpanded) {
+                Text(if (isIslandExpanded) "PERKECIL" else "PERPANJANG", color = AccentGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
         }
 
         // Direction-pad controls for the floating Music Dynamic Island.
