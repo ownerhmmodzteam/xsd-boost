@@ -346,7 +346,11 @@ class FloatingOverlayService : Service() {
 
     private fun syncGameCrosshair(profile: GameProfileEntity) {
         if (profile.crosshairEnabled && activeGamePackage == profile.packageName) {
-            container.activeGameCrosshairConfig.value = profile.toCrosshairConfig()
+            val positionPrefs = getSharedPreferences("xsd_crosshair_positions", Context.MODE_PRIVATE)
+            container.activeGameCrosshairConfig.value = profile.toCrosshairConfig().copy(
+                positionX = positionPrefs.getFloat("${profile.packageName}_x", 0.5f),
+                positionY = positionPrefs.getFloat("${profile.packageName}_y", 0.5f)
+            )
             FloatingCrosshairService.start(this)
         } else {
             container.activeGameCrosshairConfig.value = null
@@ -629,6 +633,11 @@ class FloatingOverlayService : Service() {
                         updateActiveGameOrPreview { it.copy(crosshairEnabled = enabled) }
                     },
                     onUpdateCrosshair = { cfg ->
+                        val pkg = resolvedProfile.packageName
+                        getSharedPreferences("xsd_crosshair_positions", Context.MODE_PRIVATE).edit()
+                            .putFloat("${pkg}_x", cfg.positionX.coerceIn(0f, 1f))
+                            .putFloat("${pkg}_y", cfg.positionY.coerceIn(0f, 1f))
+                            .apply()
                         updateActiveGameOrPreview {
                             it.copy(
                                 crosshairStyle = cfg.style.name,
@@ -637,6 +646,7 @@ class FloatingOverlayService : Service() {
                                 crosshairOpacity = cfg.opacity
                             )
                         }
+                        container.activeGameCrosshairConfig.value = cfg
                     },
                     graphicsInfo = graphicsInfo,
                     graphicsProfiles = graphicsProfiles,
@@ -795,21 +805,6 @@ class FloatingOverlayService : Service() {
                     onNext = { musicPlayer.skipToNext() },
                     onPrevious = { musicPlayer.skipToPrevious() },
                     onToggleRepeat = { musicPlayer.toggleRepeat() },
-                    onDragIsland = { dx, dy ->
-                        val view = islandView
-                        val layout = islandParams
-                        if (view != null && layout != null) {
-                            val maxX = (resources.displayMetrics.widthPixels - view.width).coerceAtLeast(0)
-                            val maxY = (resources.displayMetrics.heightPixels - view.height).coerceAtLeast(0)
-                            layout.x = (layout.x + dx.toInt()).coerceIn(0, maxX)
-                            layout.y = (layout.y + dy.toInt()).coerceIn(0, maxY)
-                            try {
-                                windowManager?.updateViewLayout(view, layout)
-                                getSharedPreferences("xsd_island_position", Context.MODE_PRIVATE).edit()
-                                    .putInt("x", layout.x).putInt("y", layout.y).apply()
-                            } catch (_: Exception) { }
-                        }
-                    },
                     onHideIsland = {
                         isIslandHiddenForSession = true
                         isIslandExpandedState = false
