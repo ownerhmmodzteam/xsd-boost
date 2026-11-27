@@ -667,6 +667,8 @@ class FloatingOverlayService : Service() {
                     dynamicIslandEnabled = resolvedProfile.dynamicIslandEnabled,
                     islandPositionX = islandPositionXState,
                     islandPositionY = islandPositionYState,
+                    isIslandExpanded = isIslandExpandedState,
+                    onToggleIslandExpanded = { isIslandExpandedState = !isIslandExpandedState },
                     onAdjustIslandPosition = { dxDp, dyDp ->
                         val density = resources.displayMetrics.density
                         val view = islandView
