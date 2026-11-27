@@ -1,7 +1,6 @@
 package com.example.ui.screens
 
 import android.content.Context
-import android.net.Uri
 import android.content.Intent
 import android.widget.ImageView
 import androidx.activity.compose.BackHandler
@@ -33,6 +32,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -40,11 +45,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.AspectRatioFrameLayout
-import androidx.media3.ui.PlayerView
 import com.example.core.system.games.GameApp
 import com.example.core.system.hardware.SystemStats
 import com.example.core.system.media.MusicPlayerState
@@ -66,53 +66,56 @@ fun GameSpaceScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val animationFiles = remember { (1..5).map { index -> "background_" + index.toString().padStart(2, '0') + ".mp4" } }
-    val bundledFiles = remember { context.assets.list("game_backgrounds")?.toSet().orEmpty() }
     val prefs = remember { context.getSharedPreferences("xsd_game_space", Context.MODE_PRIVATE) }
     var selectedAnimation by rememberSaveable { mutableIntStateOf(prefs.getInt("selected_animation", 1).coerceIn(1, 5)) }
     var selectedGamePackages by rememberSaveable { mutableStateOf(emptySet<String>()) }
     var showGamePicker by remember { mutableStateOf(false) }
     var showMonitorPanel by rememberSaveable { mutableStateOf(false) }
     var showEntrance by rememberSaveable { mutableStateOf(true) }
+    val ambientTransition = rememberInfiniteTransition(label = "game_space_ambient")
+    val ambientProgress by ambientTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(animation = androidx.compose.animation.core.tween(9000), repeatMode = RepeatMode.Reverse),
+        label = "ambient_progress"
+    )
     LaunchedEffect(Unit) { kotlinx.coroutines.delay(1500); showEntrance = false }
+    LaunchedEffect(selectedAnimation) { prefs.edit().putInt("selected_animation", selectedAnimation).apply() }
     val selectedGames = remember(games, selectedGamePackages) { games.filter { it.packageName in selectedGamePackages } }
-    val player = remember(context) { ExoPlayer.Builder(context).build() }
-
-    DisposableEffect(player) {
-        player.repeatMode = Player.REPEAT_MODE_ONE
-        player.volume = 0f
-        onDispose { player.stop(); player.clearVideoSurface(); player.release() }
-    }
-    LaunchedEffect(selectedAnimation) {
-        prefs.edit().putInt("selected_animation", selectedAnimation).apply()
-        val file = animationFiles[selectedAnimation - 1]
-        if (file in bundledFiles) {
-            player.setMediaItem(MediaItem.fromUri(Uri.parse("asset:///game_backgrounds/$file")))
-            player.prepare()
-            player.playWhenReady = true
-        } else {
-            player.stop()
-            player.clearMediaItems()
-        }
-    }
+    val accentPalettes = listOf(
+        Color(0xFF39F58A), Color(0xFF40D9FF), Color(0xFFB18CFF), Color(0xFFFFB45C), Color(0xFFFF668A)
+    )
+    val ambientAccent = accentPalettes[selectedAnimation - 1]
     BackHandler(onBack = onExit)
 
-    BoxWithConstraints(modifier.fillMaxSize().background(GameSpaceDark)) {
-        val exoPlayer = player
-        AndroidView(
-            factory = { ctx ->
-                PlayerView(ctx).apply {
-                    useController = false
-                    resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                    setShutterBackgroundColor(android.graphics.Color.rgb(8, 13, 11))
-                    this.player = exoPlayer
-                }
-            },
-            update = { if (it.player !== exoPlayer) it.player = exoPlayer },
-            modifier = Modifier.fillMaxSize()
-        )
+    BoxWithConstraints(
+        modifier.fillMaxSize()
+            .background(Brush.linearGradient(listOf(Color(0xFF050B08), Color(0xFF101D17), Color(0xFF050907))))
+            .drawBehind {
+                val glowX = size.width * (0.18f + 0.64f * ambientProgress)
+                val glowY = size.height * (0.24f + 0.12f * ambientProgress)
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(ambientAccent.copy(alpha = 0.24f), Color.Transparent),
+                        center = Offset(glowX, glowY),
+                        radius = size.maxDimension * 0.72f
+                    ),
+                    radius = size.maxDimension * 0.72f,
+                    center = Offset(glowX, glowY)
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color(0xFF39F58A).copy(alpha = 0.10f), Color.Transparent),
+                        center = Offset(size.width * 0.82f, size.height * 0.82f),
+                        radius = size.maxDimension * 0.52f
+                    ),
+                    radius = size.maxDimension * 0.52f,
+                    center = Offset(size.width * 0.82f, size.height * 0.82f)
+                )
+            }
+    ) {
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
-            listOf(Color(0xAA040A07), Color(0x22040A07), Color(0xDD040A07))
+            listOf(Color(0x55040A07), Color(0x08040A07), Color(0xAA040A07))
         )))
         Row(Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
             // LEFT: compact game library
@@ -146,11 +149,10 @@ fun GameSpaceScreen(
                             }
                         }
                     }
-                    Text("BACKGROUND", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text("AMBIENT THEME", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        animationFiles.forEachIndexed { index, _ ->
-                            val num = index + 1
-                            Box(Modifier.weight(1f).height(25.dp).clip(RoundedCornerShape(7.dp)).background(if (selectedAnimation == num) GameSpaceGreen else Color(0xFF202A23)).clickable { selectedAnimation = num }, contentAlignment = Alignment.Center) {
+                        (1..5).forEach { num ->
+                            Box(Modifier.weight(1f).height(25.dp).clip(RoundedCornerShape(7.dp)).background(if (selectedAnimation == num) accentPalettes[num - 1] else Color(0xFF202A23)).clickable { selectedAnimation = num }, contentAlignment = Alignment.Center) {
                                 Text(num.toString(), color = if (selectedAnimation == num) GameSpaceDark else Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -170,7 +172,7 @@ fun GameSpaceScreen(
                     MonitorTile("FPS", fps.toInt().toString())
                 }
                 Spacer(Modifier.height(12.dp))
-                Text("SYSTEM READY", color = GameSpaceGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                Text("SYSTEM READY", color = ambientAccent, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
             }
             // RIGHT: compact quick controls
             Surface(Modifier.width(170.dp).fillMaxHeight(), color = Color(0xAA0D1511), shape = RoundedCornerShape(22.dp), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0x2239F58A)) ) {
