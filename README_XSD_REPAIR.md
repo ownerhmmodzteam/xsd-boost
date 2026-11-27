@@ -15,11 +15,12 @@
 - Sensitivity X/Y controls, presets, simulation, callbacks, preference keys, and compatibility code have been removed from active app functionality.
 - Inert Room schema columns are retained solely to avoid wiping existing game profiles during an upgrade; no runtime code reads or writes them.
 
-## Shizuku and Rish
-- Existing Shizuku API/Binder/UserService implementation is retained.
-- Supplied `rish` and `rish_shizuku.dex` are packaged under `app/src/main/assets/rish/` for reference/integration.
-- These files are NOT automatically installed or executed. The supplied `rish` script contains a `PKG` placeholder intended for a terminal application's package ID; it must not be blindly run as the XSD BOOST package.
-- Use Shizuku API/UserService as the primary integration. Rish is optional and must only execute validated, allowlisted operations.
+## Shizuku
+- Shizuku API/Binder/UserService and the AIDL interface are compiled into the application's DEX as part of the normal Android build.
+- The external Rish script and its standalone DEX are not required by this integration and are removed from the APK assets.
+- UserService command execution accepts only exact allowlisted argument sets; arbitrary shell strings are rejected.
+- The supported actions are fixed-performance mode and Android package cache trimming. Device support and permission state can still affect the result.
+- Touch/display tuning is not exposed as a working action because the previous command was incomplete and could not reliably apply a setting.
 
 ## Build verification
 This archive does not include `gradlew`, `gradlew.bat`, or a wrapper JAR, and the execution environment used for this repair did not have Gradle installed. Therefore an Android build could not be run here. Open the project in Android Studio and sync with its configured Gradle/AGP versions before producing an APK.
