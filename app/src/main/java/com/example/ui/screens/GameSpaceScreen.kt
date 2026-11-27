@@ -72,10 +72,8 @@ fun GameSpaceScreen(
     fps: Float,
     games: List<GameApp>,
     musicState: MusicPlayerState,
-    isRogOverlayActive: Boolean,
     onLaunchGame: (String) -> Unit,
     onRunSmartBoost: () -> Unit,
-    onToggleRogMonitor: (Boolean) -> Unit,
     onExit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -269,25 +267,6 @@ fun GameSpaceScreen(
                 MetricCard("RAM", "${stats.ramUsagePercent.toInt()}%", Icons.Default.Memory, Modifier.weight(1f))
                 MetricCard("TEMP", stats.effectiveTempCelsius?.let { "${it.toInt()}°C" } ?: "N/A", Icons.Default.Thermostat, Modifier.weight(1f))
                 MetricCard("FPS", fps.toInt().toString(), Icons.Default.Bolt, Modifier.weight(1f))
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            SectionHeading("PERFORMANCE", "QUICK GAME TOOLS")
-            Row(horizontalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
-                ActionCard(
-                    "SMART BOOST",
-                    "Jalankan optimasi sistem yang tersedia.",
-                    Icons.Default.Bolt,
-                    Modifier.weight(1f),
-                    onRunSmartBoost
-                )
-                ActionCard(
-                    if (isRogOverlayActive) "ROG HUD ACTIVE" else "FLOATING ROG HUD",
-                    "Tampilkan monitor saat bermain.",
-                    Icons.Default.Speed,
-                    Modifier.weight(1f)
-                ) { onToggleRogMonitor(!isRogOverlayActive) }
             }
         }
 
