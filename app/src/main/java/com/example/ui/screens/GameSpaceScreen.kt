@@ -121,6 +121,7 @@ fun GameSpaceScreen(
     }
 
     BackHandler(onBack = onExit)
+    val activePlayer = player
 
     Column(
         modifier = modifier
@@ -166,11 +167,11 @@ fun GameSpaceScreen(
                             useController = false
                             resizeMode = AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                             setShutterBackgroundColor(android.graphics.Color.rgb(8, 10, 16))
-                            player = player
+                            this.player = activePlayer
                         }
                     },
                     update = { view ->
-                        if (view.player !== player) view.player = player
+                        if (view.player !== activePlayer) view.player = activePlayer
                     },
                     modifier = Modifier.fillMaxSize()
                 )
