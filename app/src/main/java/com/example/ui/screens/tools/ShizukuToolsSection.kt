@@ -267,20 +267,6 @@ fun LazyListScope.shizukuEngineSection(
         )
     }
 
-    item(key = "shizuku_action_touch") {
-        ShizukuActionCard(
-            title = "Touch & Display Latency Sync",
-            subtitle = "cmd display set-user-preferred-display-mode",
-            description = "Enforces high-priority compositor touch event dispatching to eliminate input lag.",
-            isExecuting = isExecuting,
-            onExecute = {
-                onExecuteCommand("Optimizing touch pipeline...") {
-                    bridge.optimizeTouchSamplingRate()
-                }
-            }
-        )
-    }
-
     if (executionStatusText != null || status.lastCommandOutput != null) {
         item(key = "shizuku_console_output") {
             Box(
