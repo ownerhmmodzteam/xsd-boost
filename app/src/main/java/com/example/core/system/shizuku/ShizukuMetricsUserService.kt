@@ -124,20 +124,25 @@ class ShizukuMetricsUserService : IShizukuMetricsService.Stub() {
     }
 
     override fun executeShellCommand(command: String?): String {
-        val cmd = command?.trim().orEmpty()
-        if (cmd.isEmpty()) return "Empty command"
+        val args = when (command?.trim()) {
+            "cmd power set-fixed-performance-mode-enabled true" ->
+                listOf("cmd", "power", "set-fixed-performance-mode-enabled", "true")
+            "pm trim-caches 4096M" ->
+                listOf("pm", "trim-caches", "4096M")
+            else -> return "Perintah ditolak: operasi tidak ada dalam daftar Shizuku yang diizinkan."
+        }
 
         return try {
-            val process = ProcessBuilder("sh", "-c", cmd).start()
+            val process = ProcessBuilder(args).start()
             val stdout = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }.trim()
             val stderr = BufferedReader(InputStreamReader(process.errorStream)).use { it.readText() }.trim()
-            val exitCode = process.waitFor()
+            val completed = process.waitFor()
             val uid = Process.myUid()
             when {
-                exitCode == 0 && stdout.isNotEmpty() -> stdout
-                exitCode == 0 -> "Command executed successfully via Shizuku [UID=$uid, Exit=0]"
-                stderr.isNotEmpty() -> "Shizuku Exit $exitCode [UID=$uid]: $stderr"
-                else -> "Shizuku Exit $exitCode [UID=$uid]"
+                completed == 0 && stdout.isNotEmpty() -> stdout
+                completed == 0 -> "Operasi Shizuku selesai [UID=$uid, Exit=0]."
+                stderr.isNotEmpty() -> "Shizuku Exit $completed [UID=$uid]: $stderr"
+                else -> "Shizuku Exit $completed [UID=$uid]."
             }
         } catch (e: Exception) {
             "Shizuku command error: ${e.localizedMessage ?: "Unknown error"}"
