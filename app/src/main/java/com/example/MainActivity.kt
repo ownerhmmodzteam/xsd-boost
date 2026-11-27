@@ -245,10 +245,8 @@ fun MainAppContainer(viewModel: MainViewModel) {
             fps = fps,
             games = games,
             musicState = musicState,
-            isRogOverlayActive = isOverlayActive,
             onLaunchGame = { pkg -> viewModel.launchGame(pkg) },
             onRunSmartBoost = { viewModel.runSmartBoost() },
-            onToggleRogMonitor = { enabled -> viewModel.toggleOverlay(enabled) },
             onExit = { isGameSpaceOpen = false }
         )
     } else {
